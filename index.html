@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이화여고 일일 퀘스트</title>
+    <title>이화여고 일일 퀘스트 - 이화퀘스트</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 아이콘 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
-        /* 이화 그린 컬러 매뉴얼에 맞춘 색상 정의 */
-        .bg-ewha-green { background-color: #00531F; }
+        .bg-ewha { background-color: #00531F; }
         .bg-ewha-dark { background-color: #003a16; }
         .bg-ewha-light { background-color: #e6f0ea; }
-        .text-ewha-green { color: #00531F; }
-        .text-ewha-dark { color: #003a16; }
-        .border-ewha-green { border-color: #00531F; }
-        
-        /* 스크롤바 숨기기 */
+        .text-ewha { color: #00531F; }
+        .border-ewha { border-color: #00531F; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -27,118 +26,154 @@
 
     <div class="max-w-md mx-auto min-h-screen bg-white shadow-2xl flex flex-col justify-between relative overflow-hidden">
         
+        <!-- 고정형 상단 로고 바 (절대 변형 없음, 누르면 커뮤니티로 홈 이동) -->
         <header id="app-header" class="hidden bg-white border-b border-gray-200 h-16 flex items-center justify-center sticky top-0 z-50 cursor-pointer">
             <img src="logo.png" alt="EWHA Quest" class="h-12 object-contain" onclick="switchTab('community')">
         </header>
 
+        <!-- 메인 화면 컨테이너 -->
         <main class="flex-grow p-4 overflow-y-auto no-scrollbar pb-24">
             
+            <!-- [로그인 화면] -->
             <div id="view-login" class="flex flex-col items-center justify-center pt-16 space-y-8">
                 <img src="logo.png" alt="EWHA Quest" class="w-4/5 object-contain">
-                <div class="text-center space-y-2">
-                    <p class="text-gray-600 text-sm">이화여자고등학교 구글 계정으로만<br>로그인 및 이용이 가능합니다.</p>
-                </div>
-                <button id="btn-login" class="bg-ewha-green text-white font-bold py-3 px-8 rounded-lg shadow hover:bg-ewha-dark transition w-full max-w-xs flex items-center justify-center space-x-2">
+                <p class="text-gray-600 text-sm text-center">이화여자고등학교 구글 계정(@ewha.hs.kr)으로<br>로그인 후 서비스를 시작하세요.</p>
+                <button id="btn-login" class="bg-ewha text-white font-bold py-3 px-8 rounded-lg shadow hover:bg-ewha-dark transition w-full max-w-xs flex items-center justify-center space-x-2">
                     <i class="fa-brands fa-google"></i>
                     <span>이화 계정으로 로그인</span>
                 </button>
             </div>
 
+            <!-- [공통 사용자 대시보드 조각] -->
+            <div id="user-summary-box" class="hidden flex justify-between items-center bg-ewha-light p-3 rounded-lg border border-emerald-200 mb-4">
+                <span class="font-bold text-ewha-dark"><span id="user-name">이화인</span>님</span>
+                <span class="font-bold text-ewha">✨ <span id="user-points">0</span> P</span>
+            </div>
+
+            <!-- [1. 커뮤니티 창] -->
             <div id="view-community" class="hidden space-y-4">
-                <div class="flex justify-between items-center bg-ewha-light p-3 rounded-lg border border-emerald-200">
-                    <span class="font-bold text-ewha-dark"><span id="user-display-name">이화인</span>님</span>
-                    <span class="font-bold text-ewha-green">✨ <span id="user-display-points">0</span> P</span>
-                </div>
-                
-                <div id="admin-trigger-box" class="hidden bg-amber-50 border border-amber-400 p-3 rounded-lg flex justify-between items-center">
-                    <span class="text-xs text-amber-800 font-bold">🛡️ 승인 대기 중인 퀘스트가 있습니다.</span>
-                    <button onclick="openAdminPanel()" class="bg-amber-600 text-white text-xs px-2 py-1 rounded font-bold">검증하기</button>
-                </div>
-
-                <h3 class="font-bold text-lg border-b pb-1 text-ewha-dark">📜 미션 히스토리</h3>
-                <div id="mission-box-list" class="space-y-3">
-                    </div>
+                <h3 class="font-bold text-base border-b pb-1 text-gray-700">📜 미션 히스토리 전체보기</h3>
+                <div id="mission-history-list" class="space-y-3"></div>
             </div>
 
+            <!-- [커뮤니티 - 특정 미션 상세 글 보기 창] -->
             <div id="view-mission-detail" class="hidden space-y-4">
-                <button onclick="switchTab('community')" class="text-sm font-bold text-ewha-green mb-2"><i class="fa-solid fa-arrow-left"></i> 목록으로 가기</button>
+                <button onclick="switchTab('community')" class="text-sm font-bold text-ewha"><i class="fa-solid fa-arrow-left"></i> 목록으로</button>
+                <div id="detail-mission-card" class="bg-ewha-light border border-ewha p-4 rounded-lg font-bold text-ewha-dark"></div>
                 
-                <div id="selected-mission-card" class="bg-ewha-light border-2 border-ewha-green p-4 rounded-lg font-bold text-ewha-dark shadow-sm">
-                    </div>
-
+                <!-- 검색창 -->
                 <div class="flex space-x-2">
-                    <input type="text" id="search-input" placeholder="원하는 글의 키워드를 입력하세요" class="flex-grow border p-2 rounded text-sm focus:outline-ewha-green">
-                    <button onclick="filterPosts()" class="bg-ewha-green text-white px-4 rounded text-sm hover:bg-ewha-dark font-bold">검색</button>
+                    <input type="text" id="search-input" placeholder="글 내용 검색..." class="flex-grow border p-2 rounded text-sm focus:outline-ewha">
+                    <button onclick="filterPosts()" class="bg-ewha text-white px-4 rounded text-sm hover:bg-ewha-dark font-bold">검색</button>
                 </div>
 
-                <div class="flex justify-end space-x-4 text-xs font-bold text-gray-500">
-                    <button id="sort-recent" onclick="changeSort('recent')" class="text-ewha-green underline">최신순</button>
-                    <button id="sort-likes" onclick="changeSort('likes')">좋아요 많은 순</button>
+                <!-- 정렬 조건 -->
+                <div class="flex justify-end space-x-4 text-xs font-bold text-gray-400">
+                    <button id="sort-recent" onclick="changeSort('recent')" class="text-ewha underline">최신순</button>
+                    <button id="sort-likes" onclick="changeSort('likes')">하트 순</button>
                 </div>
 
-                <div id="posts-container" class="space-y-3">
-                    </div>
+                <div id="posts-container" class="space-y-3"></div>
             </div>
 
-            <div id="view-write" class="hidden space-y-4">
-                <button onclick="switchTab('community')" class="text-sm font-bold text-ewha-green mb-2"><i class="fa-solid fa-arrow-left"></i> 취소</button>
-                <h3 class="font-bold text-lg text-ewha-dark">📝 미션에 답변 남기기</h3>
-                <div id="write-mission-title" class="p-3 bg-gray-50 rounded border font-medium text-sm"></div>
-                <p class="text-xs text-gray-500">* 첫 답변 등록 시 즉시 +5포인트가 적립됩니다.</p>
-                <textarea id="post-content" rows="6" placeholder="이화인들에게 도움이 될 생생한 정보를 공유해주세요!" class="w-full border p-3 rounded-lg text-sm focus:outline-ewha-green"></textarea>
-                <button id="btn-submit-post" class="w-full bg-ewha-green text-white py-3 rounded-lg font-bold hover:bg-ewha-dark transition">답변 등록하고 5P 받기</button>
+            <!-- [2. 캘린더 창] -->
+            <div id="view-calendar" class="hidden space-y-4">
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                    <button onclick="moveMonth(-1)" class="font-bold text-ewha p-2 px-4 text-lg">&lt;</button>
+                    <span id="calendar-title" class="font-bold text-base text-gray-800">2026년 7월</span>
+                    <button onclick="moveMonth(1)" class="font-bold text-ewha p-2 px-4 text-lg">&gt;</button>
+                </div>
+                <!-- 달력 격자 -->
+                <div class="grid grid-cols-7 gap-1 text-center font-bold text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                    <div class="text-red-500">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-blue-500">토</div>
+                </div>
+                <div id="calendar-days" class="grid grid-cols-7 gap-1 min-h-[280px]"></div>
+                <p class="text-[11px] text-gray-400 text-center leading-relaxed">* 미션이 매칭된 모든 날짜에 도장이 찍히면 달 말에 완주 보너스 +30P가 지급됩니다.</p>
             </div>
 
-            <div id="view-admin" class="hidden space-y-4">
-                <button onclick="switchTab('community')" class="text-sm font-bold text-ewha-green mb-2"><i class="fa-solid fa-arrow-left"></i> 나가기</button>
-                <h3 class="font-bold text-lg text-amber-800">🛡️ 관리자 미션 검증 대시보드</h3>
-                <p class="text-xs text-gray-500">지정된 관리자 계정(b21101@ewha.hs.kr)만 확인 가능합니다. 이상한 질문을 차단하세요.</p>
-                <div id="admin-pending-list" class="space-y-3"></div>
+            <!-- [3. 오늘의 미션 창] -->
+            <div id="view-today" class="hidden space-y-5 pt-4">
+                <div class="bg-white border-2 border-ewha p-6 rounded-xl shadow-sm text-center space-y-4">
+                    <div class="text-xs font-bold text-white bg-ewha inline-block px-3 py-1 rounded-full">TODAY'S MISSION</div>
+                    <h2 id="today-mission-text" class="text-xl font-bold text-gray-900 py-2">가장 좋아하는 급식 소개</h2>
+                    <div id="today-status-tag" class="text-xs font-semibold text-gray-400"></div>
+                </div>
+                <button id="btn-go-write" class="w-full bg-ewha text-white py-4 rounded-xl font-bold text-base hover:bg-ewha-dark transition shadow">
+                    작성하기
+                </button>
             </div>
 
-            <div id="view-calendar" class="hidden text-center py-20 text-gray-400">📅 캘린더 창 준비 중입니다.</div>
+            <!-- [오늘의 미션 - 작성 및 파일 업로드 창] -->
+            <div id="view-mission-write" class="hidden space-y-4">
+                <button onclick="switchTab('today')" class="text-sm font-bold text-ewha"><i class="fa-solid fa-arrow-left"></i> 뒤로가기</button>
+                <h3 class="font-bold text-lg text-gray-800">🎯 미션 수행 및 제출</h3>
+                <div id="write-target-title" class="p-3 bg-gray-50 rounded border font-bold text-ewha"></div>
+                
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-500">내용 작성</label>
+                    <textarea id="write-text" rows="5" placeholder="미션 내용을 입력하세요..." class="w-full border p-3 rounded-lg text-sm focus:outline-ewha"></textarea>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-500">사진/파일 첨부</label>
+                    <input type="file" id="write-file" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-ewha-light file:text-ewha hover:file:bg-emerald-100">
+                </div>
+
+                <button onclick="submitMissionPost()" class="w-full bg-ewha text-white py-3 rounded-lg font-bold hover:bg-ewha-dark shadow mt-2">제출하기 (완료 시 +15P)</button>
+            </div>
+
+            <!-- [4. 포인트 사용 창] -->
             <div id="view-points" class="hidden text-center py-20 text-gray-400">🛍️ 포인트 사용 창 준비 중입니다.</div>
+            
+            <!-- [5. 마이페이지 창] -->
             <div id="view-mypage" class="hidden text-center py-20 text-gray-400">👤 마이페이지 준비 중입니다.</div>
+
+            <!-- [🛡️ 오직 관리자만 볼 수 있는 특별 비밀 대시보드] -->
+            <div id="view-admin" class="hidden space-y-4">
+                <h3 class="font-bold text-lg text-red-800 border-b pb-2"><i class="fa-solid fa-shield-halved"></i> 관리자 전용 미션 심사실</h3>
+                <p class="text-xs text-gray-500">학생들이 신청한 미션들이 순번에 따라 대기 중입니다. 유해하거나 무의미한 질문은 즉시 삭제하여 차단하세요.</p>
+                <div id="admin-queue" class="space-y-3"></div>
+            </div>
 
         </main>
 
-        <nav id="app-nav" class="hidden bg-ewha-green text-white h-20 flex items-center justify-between px-2 border-t border-ewha-dark fixed bottom-0 max-w-md w-full z-50">
-            <button onclick="switchTab('community')" id="tab-community" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
-                <i class="fa-solid fa-users text-lg"></i>
-                <span class="text-[10px]">커뮤니티</span>
+        <!-- 고정형 하단 바 (인스타그램 스타일 통일 디자인, 돌출 제거) -->
+        <nav id="app-nav" class="hidden bg-ewha text-white h-16 flex items-center justify-between px-2 fixed bottom-0 max-w-md w-full z-50 border-t border-ewha-dark">
+            <button onclick="switchTab('community')" id="tab-community" class="flex-1 flex flex-col items-center justify-center space-y-0.5 opacity-70 transition">
+                <i class="fa-solid fa-users text-base"></i><span class="text-[10px]">커뮤니티</span>
             </button>
-            <button onclick="switchTab('calendar')" id="tab-calendar" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
-                <i class="fa-solid fa-calendar-days text-lg"></i>
-                <span class="text-[10px]">캘린더</span>
+            <button onclick="switchTab('calendar')" id="tab-calendar" class="flex-1 flex flex-col items-center justify-center space-y-0.5 opacity-70 transition">
+                <i class="fa-solid fa-calendar-days text-base"></i><span class="text-[10px]">캘린더</span>
             </button>
-            <button onclick="openTodayMissionDirectly()" id="tab-today" class="flex-1 flex flex-col items-center justify-center space-y-1 bg-ewha-dark py-2 font-bold transition">
-                <i class="fa-solid fa-bolt text-2xl text-amber-300"></i>
-                <span class="text-xs">오늘의 미션</span>
+            <button onclick="switchTab('today')" id="tab-today" class="flex-1 flex flex-col items-center justify-center space-y-0.5 opacity-70 transition">
+                <i class="fa-solid fa-bolt text-base"></i><span class="text-[10px]">오늘의 미션</span>
             </button>
-            <button onclick="switchTab('points')" id="tab-points" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
-                <i class="fa-solid fa-gift text-lg"></i>
-                <span class="text-[10px]">포인트 사용</span>
+            <button onclick="switchTab('points')" id="tab-points" class="flex-1 flex flex-col items-center justify-center space-y-0.5 opacity-70 transition">
+                <i class="fa-solid fa-gift text-base"></i><span class="text-[10px]">포인트사용</span>
             </button>
-            <button onclick="switchTab('mypage')" id="tab-mypage" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
-                <i class="fa-solid fa-user text-lg"></i>
-                <span class="text-[10px]">마이페이지</span>
+            <button onclick="switchTab('mypage')" id="tab-mypage" class="flex-1 flex flex-col items-center justify-center space-y-0.5 opacity-70 transition">
+                <i class="fa-solid fa-user text-base"></i><span class="text-[10px]">마이페이지</span>
+            </button>
+            <!-- 🛡️ 지정된 최고관리자에게만 자동으로 동적 생성되어 붙는 관리자 전용 시크릿 단추 -->
+            <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 flex flex-col items-center justify-center space-y-0.5 text-amber-300 font-bold transition">
+                <i class="fa-solid fa-lock-open text-base"></i><span class="text-[10px]">관리자</span>
             </button>
         </nav>
 
     </div>
 
     <script>
-        // ⚠️ [필수] 파이어베이스 정보 입력칸
+        // ⚠️ Firebase 연동 데이터 주입칸
         const firebaseConfig = {
-  		apiKey: "AIzaSyAsJQDjD6o-j9L_lNj-dked7gULc4fcFKo",
- 		 authDomain: "ewha-40d65.firebaseapp.com",
-  		projectId: "ewha-40d65",
-  		storageBucket: "ewha-40d65.firebasestorage.app",
-  		messagingSenderId: "491468098459",
-  		appId: "1:491468098459:web:54810c396c128ee882af3e",
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
-        // 🛡️ 지정된 전용 관리자 이메일 고정
+        // 🛡️ 고정 관리자 지정 계정
         const ADMIN_EMAIL = "b21101@ewha.hs.kr";
 
         firebase.initializeApp(firebaseConfig);
@@ -147,257 +182,194 @@
         const provider = new firebase.auth.GoogleAuthProvider();
 
         let currentUser = null;
-        let userPoints = 0;
+        let userData = { points: 0, completedMissions: {} }; // 대칭구조 매핑
+        let currentYear = 2026, currentMonth = 6; // 기본값 2026년 7월 (0이 1월, 6이 7월)
         let activeMissionId = null;
-        let currentSort = 'recent'; 
-        let participatedMissions = []; 
+        let activeMissionTitle = "";
+        let currentSort = 'recent';
 
-        // 로그인 바인딩
+        // 첫 가상의 고정 오늘 미션 정의 데이터베이스 연동 기본값 세팅용
+        const DEFAULT_TODAY_ID = "default_today_01";
+        const DEFAULT_TODAY_TITLE = "가장 좋아하는 급식 소개";
+
         document.getElementById('btn-login').addEventListener('click', () => {
-            auth.signInWithPopup(provider).then((result) => {
-                if (!result.user.email.endsWith('@ewha.hs.kr')) {
-                    alert('이화여고 공식 구글 계정(@ewha.hs.kr)만 진입할 수 있습니다.');
-                    auth.signOut();
-                    location.reload();
+            auth.signInWithPopup(provider).then((res) => {
+                if (!res.user.email.endsWith('@ewha.hs.kr')) {
+                    alert('이화여고 학교 구글계정만 허용됩니다.');
+                    auth.signOut(); location.reload();
                 }
-            }).catch(() => alert('로그인 처리 중 에러가 발생했습니다.'));
+            });
         });
 
-        // 인증 상태 추적 및 기초 데이터 동기화
         auth.onAuthStateChanged((user) => {
             if (user && user.email.endsWith('@ewha.hs.kr')) {
                 currentUser = user;
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('app-header').classList.remove('hidden');
+                document.getElementById('user-summary-box').classList.remove('hidden');
                 document.getElementById('app-nav').classList.remove('hidden');
-                document.getElementById('user-display-name').innerText = user.displayName || '이화인';
-                
-                // 유저 포인트 리스너 및 참여 기록 가져오기
-                syncUserData();
-                // 초기 실행은 항상 커뮤니티 창 실행
-                switchTab('community');
-                
+                document.getElementById('user-name').innerText = user.displayName || '이화인';
+
                 if (user.email === ADMIN_EMAIL) {
-                    document.getElementById('admin-trigger-box').classList.remove('hidden');
+                    document.getElementById('tab-admin').classList.remove('hidden');
                 }
+                
+                initDefaultMission();
+                listenUserData();
+                switchTab('community'); // 첫 실행 메인창 고정
             } else {
                 document.getElementById('view-login').classList.remove('hidden');
                 document.getElementById('app-header').classList.add('hidden');
+                document.getElementById('user-summary-box').classList.add('hidden');
                 document.getElementById('app-nav').classList.add('hidden');
             }
         });
 
-        // 사용자 데이터 및 포인트 로드
-        function syncUserData() {
+        function initDefaultMission() {
+            db.collection('missions').doc(DEFAULT_TODAY_ID).set({
+                content: DEFAULT_TODAY_TITLE,
+                status: 'approved',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                fixedDateStr: "2026-07-08" // 오늘 날짜 고정 매핑
+            }, { merge: true });
+        }
+
+        function listenUserData() {
             db.collection('users').doc(currentUser.uid).onSnapshot((doc) => {
                 if (doc.exists) {
-                    userPoints = doc.data().points || 0;
-                    participatedMissions = doc.data().participated || [];
+                    userData = doc.data();
+                    if (!userData.completedMissions) userData.completedMissions = {};
                 } else {
-                    userPoints = 0;
-                    db.collection('users').doc(currentUser.uid).set({ points: 0, participated: [] });
+                    userData = { points: 0, completedMissions: {} };
+                    db.collection('users').doc(currentUser.uid).set(userData);
                 }
-                document.getElementById('user-display-points').innerText = userPoints;
-                loadMissions(); 
+                document.getElementById('user-points').innerText = userData.points || 0;
+                loadCommunityMissions();
+                renderCalendar();
+                checkTodayMissionStatus();
             });
         }
 
-        // 전체 미션 상자 목록 로드 (최신 미션이 맨 위에 오도록 세로 정렬)
-        function loadMissions() {
-            db.collection('missions')
-              .where('status', '==', 'approved')
-              .orderBy('createdAt', 'desc')
-              .onSnapshot((snapshot) => {
-                  const boxListContainer = document.getElementById('mission-box-list');
-                  boxListContainer.innerHTML = '';
-                  
-                  if (snapshot.empty) {
-                      boxListContainer.innerHTML = `<p class="text-center py-6 text-gray-400 text-sm">등록된 전체 미션이 없습니다.</p>`;
-                      return;
-                  }
-
-                  let isFirst = true;
-                  snapshot.forEach((doc) => {
-                      const data = doc.data();
-                      const id = doc.id;
-                      const hasParticipated = participatedMissions.includes(id);
-
-                      const box = document.createElement('div');
-                      box.className = "border border-gray-200 p-4 rounded-lg shadow-sm flex justify-between items-center relative bg-white hover:border-ewha-green cursor-pointer transition";
-                      
-                      // 가장 위 상자(최신 미션) 표기법 다르게 적용 가능
-                      const tag = isFirst ? `<span class="text-xs bg-ewha-green text-white px-2 py-0.5 rounded mr-2">오늘</span>` : `<span class="text-xs bg-gray-400 text-white px-2 py-0.5 rounded mr-2">지난미션</span>`;
-                      isFirst = false;
-
-                      box.innerHTML = `
-                          <div class="flex-grow pr-8" onclick="openMissionDetail('${id}', '${data.content}')">
-                              <div class="flex items-center mb-1">${tag}</div>
-                              <div class="font-medium text-black text-sm">${data.content}</div>
-                          </div>
-                          ${!hasParticipated ? `
-                            <button onclick="goToWritePage(event, '${id}', '${data.content}')" class="absolute top-2 right-2 text-ewha-green text-lg p-1 hover:scale-110 transition">
-                                <i class="fa-solid fa-circle-plus"></i>
-                            </button>
-                          ` : ''}
-                      `;
-                      boxListContainer.appendChild(box);
-                  });
-              });
-
-            // 관리자 전용 대기 리스트 싱크
-            if (currentUser.email === ADMIN_EMAIL) {
-                db.collection('missions').where('status', '==', 'pending').onSnapshot(snap => {
-                    const trigger = document.getElementById('admin-trigger-box');
-                    if(snap.empty) trigger.classList.add('hidden');
-                    else trigger.classList.remove('hidden');
-                });
-            }
-        }
-
-        // 화면 전환 로직
         function switchTab(tabName) {
-            const views = ['view-community', 'view-mission-detail', 'view-write', 'view-admin', 'view-calendar', 'view-points', 'view-mypage'];
+            const views = ['view-community', 'view-mission-detail', 'view-calendar', 'view-today', 'view-mission-write', 'view-points', 'view-mypage', 'view-admin'];
             views.forEach(v => document.getElementById(v).classList.add('hidden'));
-            
             document.getElementById(`view-${tabName}`).classList.remove('hidden');
 
-            // 탭 활성화 비주얼 업데이트 (3번째 탭 강조 유지하면서 나머지 불투명도 조절)
-            const tabs = ['community', 'calendar', 'points', 'mypage'];
+            const tabs = ['community', 'calendar', 'today', 'points', 'mypage', 'admin'];
             tabs.forEach(t => {
                 const el = document.getElementById(`tab-${t}`);
+                if (!el) return;
                 if (t === tabName) el.classList.remove('opacity-70');
                 else el.classList.add('opacity-70');
             });
+
+            if(tabName === 'admin') loadAdminPanel();
         }
 
-        // 3번째 강조 버튼 클릭 시 동작
-        function openTodayMissionDirectly() {
+        // 1. 커뮤니티 리스트 로드
+        function loadCommunityMissions() {
             db.collection('missions')
               .where('status', '==', 'approved')
-              .orderBy('createdAt', 'desc')
-              .limit(1)
               .get()
-              .then(snap => {
-                  if(!snap.empty) {
-                      const doc = snap.docs[0];
-                      openMissionDetail(doc.id, doc.data().content);
-                  } else {
-                      switchTab('community');
-                      alert('오늘 등록된 미션이 없습니다. 커뮤니티 창으로 이동합니다.');
-                  }
+              .then(snapshot => {
+                  const container = document.getElementById('mission-history-list');
+                  container.innerHTML = '';
+
+                  // 배열 정렬 (최신순)
+                  const docs = snapshot.docs.sort((a,b) => b.id.localeCompare(a.id));
+
+                  docs.forEach(doc => {
+                      const data = doc.data();
+                      const id = doc.id;
+                      const isDone = userData.completedMissions && userData.completedMissions[id];
+
+                      const box = document.createElement('div');
+                      box.className = "bg-white border border-gray-200 p-4 rounded-lg shadow-sm flex justify-between items-center relative hover:border-ewha cursor-pointer transition";
+                      box.innerHTML = `
+                          <div class="flex-grow" onclick="openMissionDetail('${id}', '${data.content}')">
+                              <div class="text-xs text-gray-400 mb-1">${data.fixedDateStr || '일일 미션'}</div>
+                              <div class="font-bold text-sm text-gray-900">${data.content}</div>
+                          </div>
+                          ${!isDone ? `
+                              <button onclick="openDirectWrite('${id}', '${data.content}')" class="text-ewha text-xl p-1 hover:scale-110 transition">
+                                  <i class="fa-solid fa-circle-plus"></i>
+                              </button>
+                          ` : ''}
+                      `;
+                      container.appendChild(box);
+                  });
               });
         }
 
-        // 글 작성 페이지 이동
-        function goToWritePage(e, id, content) {
-            e.stopPropagation();
+        function openDirectWrite(id, title) {
             activeMissionId = id;
-            document.getElementById('write-mission-title').innerText = `🎯 미션: ${content}`;
-            document.getElementById('post-content').value = '';
-            switchTab('write');
+            activeMissionTitle = title;
+            document.getElementById('write-target-title').innerText = `🎯 대상 미션: ${title}`;
+            document.getElementById('write-text').value = '';
+            document.getElementById('write-file').value = '';
+            switchTab('mission-write');
         }
 
-        // 답변 글 등록 로직 (+5포인트 지급)
-        document.getElementById('btn-submit-post').addEventListener('click', () => {
-            const content = document.getElementById('post-content').value.trim();
-            if(!content) return alert('내용을 입력해주세요.');
-
-            db.collection('posts').add({
-                missionId: activeMissionId,
-                content: content,
-                authorUid: currentUser.uid,
-                authorName: currentUser.displayName || '익명의 이화인',
-                likes: 0,
-                likedBy: [],
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                // 글 작성 유저에게 5포인트 적립 및 참여 목록 추가
-                db.collection('users').doc(currentUser.uid).update({
-                    points: firebase.firestore.FieldValue.increment(5),
-                    participated: firebase.firestore.FieldValue.arrayUnion(activeMissionId)
-                });
-                alert('답변이 성공적으로 등록되었습니다! 5포인트가 지급되었습니다.');
-                switchTab('community');
-            });
-        });
-
-        // 특정 미션 세부조회 창 진입
-        function openMissionDetail(id, content) {
+        function openMissionDetail(id, title) {
             activeMissionId = id;
-            document.getElementById('selected-mission-card').innerText = `🎯 ${content}`;
+            document.getElementById('detail-mission-card').innerText = `🎯 ${title}`;
             document.getElementById('search-input').value = '';
             switchTab('mission-detail');
             loadPosts();
         }
 
-        // 정렬 기준 변경
         function changeSort(type) {
             currentSort = type;
-            document.getElementById('sort-recent').className = type === 'recent' ? 'text-ewha-green underline' : '';
-            document.getElementById('sort-likes').className = type === 'likes' ? 'text-ewha-green underline' : '';
+            document.getElementById('sort-recent').className = type === 'recent' ? 'text-ewha underline' : '';
+            document.getElementById('sort-likes').className = type === 'likes' ? 'text-ewha underline' : '';
             loadPosts();
         }
 
-        // 글 검색 필터링 연동
         function filterPosts() {
             loadPosts(document.getElementById('search-input').value.trim());
         }
 
-        // 상세 게시글 가져오기 (커뮤니티 인터페이스 및 하트 토글 연동)
         function loadPosts(keyword = "") {
             let query = db.collection('posts').where('missionId', '==', activeMissionId);
-            
-            if (currentSort === 'likes') {
-                query = query.orderBy('likes', 'desc');
-            } else {
-                query = query.orderBy('createdAt', 'desc');
-            }
+            if(currentSort === 'likes') query = query.orderBy('likes', 'desc');
+            else query = query.orderBy('createdAt', 'desc');
 
-            query.onSnapshot((snapshot) => {
+            query.onSnapshot(snap => {
                 const container = document.getElementById('posts-container');
                 container.innerHTML = '';
-
                 let count = 0;
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const id = doc.id;
 
-                    // 키워드 검색 필터링 적용
-                    if (keyword && !data.content.includes(keyword)) return;
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if(keyword && !data.content.includes(keyword)) return;
                     count++;
 
                     const isLiked = data.likedBy && data.likedBy.includes(currentUser.uid);
-                    const heartClass = isLiked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-gray-400';
-                    const bgHeart = isLiked ? 'bg-red-50' : 'bg-white border border-gray-300';
+                    const heartIcon = isLiked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-gray-400';
 
                     const card = document.createElement('div');
-                    card.className = "bg-white p-4 rounded-lg border border-gray-200 shadow-sm space-y-2 relative";
+                    card.className = "bg-white p-4 rounded-lg border border-gray-100 shadow-sm space-y-2";
                     card.innerHTML = `
                         <div class="text-xs text-gray-400 font-bold">작성자: ${data.authorName}</div>
-                        <div class="text-sm text-black whitespace-pre-line">${data.content}</div>
-                        <div class="flex justify-end pt-2">
-                            <button onclick="toggleLike('${id}', '${data.authorUid}', ${isLiked})" class="flex items-center space-x-1 px-2 py-1 rounded text-xs font-bold ${bgHeart}">
-                                <i class="${heartClass}"></i>
+                        <div class="text-sm text-gray-800 whitespace-pre-line">${data.content}</div>
+                        ${data.fileAttached ? `<div class="text-xs text-blue-600 bg-blue-50 p-1 inline-block rounded"><i class="fa-solid fa-paperclip"></i> 파일 첨부됨</div>` : ''}
+                        <div class="flex justify-end pt-1">
+                            <button onclick="toggleLike('${doc.id}', '${data.authorUid}', ${isLiked})" class="flex items-center space-x-1 border border-gray-200 px-2 py-1 rounded text-xs font-bold bg-white">
+                                <i class="${heartIcon}"></i>
                                 <span>${data.likes || 0}</span>
                             </button>
                         </div>
                     `;
                     container.appendChild(card);
                 });
-
-                if (count === 0) {
-                    container.innerHTML = `<p class="text-center py-8 text-gray-400 text-xs">일치하거나 작성된 글이 없습니다.</p>`;
-                }
+                if(count === 0) container.innerHTML = `<p class="text-center py-6 text-xs text-gray-400">등록된 조언이 없습니다.</p>`;
             });
         }
 
-        // 하트 토글 함수 및 실시간 포인트 지급 (+5P)
         window.toggleLike = function(postId, authorUid, isLiked) {
-            const postRef = db.collection('posts').doc(postId);
-            
-            if (!isLiked) {
-                // 하트 활성화 및 글쓴이에게 5포인트 지급
-                postRef.update({
+            const ref = db.collection('posts').doc(postId);
+            if(!isLiked) {
+                ref.update({
                     likes: firebase.firestore.FieldValue.increment(1),
                     likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
                 }).then(() => {
@@ -406,53 +378,138 @@
                     });
                 });
             } else {
-                // 하트 취소 (포인트 회수는 정책상 차감하지 않거나 선택 적용 가능, 여기서는 하트수와 배열만 차감)
-                postRef.update({
+                ref.update({
                     likes: firebase.firestore.FieldValue.increment(-1),
                     likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
                 });
             }
         };
 
-        // 관리자 패널 진입
-        window.openAdminPanel = function() {
-            if (currentUser.email !== ADMIN_EMAIL) return alert('접근 권한이 없습니다.');
-            switchTab('admin');
+        // 2. 캘린더 창 구성 시스템
+        function moveMonth(dir) {
+            currentMonth += dir;
+            if(currentMonth > 11) { currentMonth = 0; currentYear++; }
+            if(currentMonth < 0) { currentMonth = 11; currentYear--; }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            document.getElementById('calendar-title').innerText = `${currentYear}년 ${currentMonth + 1}월`;
+            const container = document.getElementById('calendar-days');
+            container.innerHTML = '';
+
+            const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+            const lastDate = new Date(currentYear, currentMonth + 0, 0).getDate();
+
+            // 공백 채우기
+            for(let i=0; i<firstDay; i++) {
+                const emp = document.createElement('div');
+                container.appendChild(emp);
+            }
+
+            // 날짜 칸 빌드
+            for(let date=1; date<=lastDate; date++) {
+                const dayBox = document.createElement('div');
+                dayBox.className = "border border-gray-100 min-h-[50px] p-1 flex flex-col items-center justify-between relative bg-white text-xs";
+                
+                const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(date).padStart(2,'0')}`;
+                
+                // 가상 미션 날짜 여부 체크 (오늘 날짜 고정 예시 연동)
+                let isMissionDay = (dateStr === "2026-07-08");
+                let hasStamped = userData.completedMissions && userData.completedMissions[DEFAULT_TODAY_ID];
+
+                dayBox.innerHTML = `
+                    <span class="font-bold text-gray-700">${date}</span>
+                    ${(isMissionDay && hasStamped) ? `<img src="stamp.png" class="w-8 h-8 object-contain absolute bottom-1">` : ''}
+                `;
+                container.appendChild(dayBox);
+            }
+        }
+
+        // 3. 오늘의 미션 화면 제어
+        function checkTodayMissionStatus() {
+            const isDone = userData.completedMissions && userData.completedMissions[DEFAULT_TODAY_ID];
+            const btn = document.getElementById('btn-go-write');
+            const statusTag = document.getElementById('today-status-tag');
             
+            if(isDone) {
+                btn.disabled = true;
+                btn.className = "w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold text-base cursor-not-allowed";
+                btn.innerText = "제출 완료";
+                statusTag.innerText = "✅ 오늘의 미션을 완수하여 도장이 찍혔습니다!";
+            } else {
+                btn.disabled = false;
+                btn.className = "w-full bg-ewha text-white py-4 rounded-xl font-bold text-base hover:bg-ewha-dark transition shadow";
+                btn.innerText = "작성하기";
+                statusTag.innerText = "⏳ 아직 참여하지 않은 미션입니다. (+15P)";
+            }
+        }
+
+        document.getElementById('btn-go-write').addEventListener('click', () => {
+            openDirectWrite(DEFAULT_TODAY_ID, DEFAULT_TODAY_TITLE);
+        });
+
+        function submitMissionPost() {
+            const text = document.getElementById('write-text').value.trim();
+            const fileInput = document.getElementById('write-file');
+            if(!text) return alert('내용을 작성해주세요.');
+
+            db.collection('posts').add({
+                missionId: activeMissionId,
+                content: text,
+                authorUid: currentUser.uid,
+                authorName: currentUser.displayName || '익명의 이화인',
+                likes: 0,
+                likedBy: [],
+                fileAttached: fileInput.files.length > 0,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                // 미션 완료 매핑 처리 및 15포인트 동시 가산
+                const upd = { points: firebase.firestore.FieldValue.increment(15) };
+                upd[`completedMissions.${activeMissionId}`] = true;
+
+                db.collection('users').doc(currentUser.uid).update(upd).then(() => {
+                    alert('미션 제출이 성공적으로 처리되었습니다! 15포인트가 적립되었습니다.');
+                    switchTab('community');
+                });
+            });
+        }
+
+        // 🛡️ 관리자 특별 검증실 제어 엔진
+        function loadAdminPanel() {
             db.collection('missions').where('status', '==', 'pending').onSnapshot(snap => {
-                const container = document.getElementById('admin-pending-list');
-                container.innerHTML = '';
+                const q = document.getElementById('admin-queue');
+                q.innerHTML = '';
                 if(snap.empty) {
-                    container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">대기 중인 질문이 없습니다.</p>';
+                    q.innerHTML = `<p class="text-center py-8 text-xs text-gray-400">⏳ 대기 중인 대기열 질문이 없습니다 깨끗합니다.</p>`;
                     return;
                 }
                 snap.forEach(doc => {
                     const data = doc.data();
-                    const id = doc.id;
                     const item = document.createElement('div');
-                    item.className = "bg-white p-3 rounded-lg border flex flex-col space-y-2";
+                    item.className = "bg-white border border-red-200 p-3 rounded-lg flex flex-col space-y-2";
                     item.innerHTML = `
-                        <div class="text-sm font-medium">${data.content}</div>
-                        <div class="text-[10px] text-gray-400">제안: ${data.suggestedBy}</div>
+                        <div class="text-sm font-bold text-gray-800">질문내용: ${data.content}</div>
+                        <div class="text-[11px] text-gray-400">제안자: ${data.suggestedBy}</div>
                         <div class="flex space-x-2 justify-end">
-                            <button onclick="approveQuest('${id}')" class="bg-ewha-green text-white text-xs px-3 py-1 rounded font-bold">승인</button>
-                            <button onclick="rejectQuest('${id}')" class="bg-red-600 text-white text-xs px-3 py-1 rounded font-bold">거절</button>
+                            <button onclick="admApprove('${doc.id}')" class="bg-ewha text-white text-xs px-3 py-1 rounded font-bold">미션 승인</button>
+                            <button onclick="admReject('${doc.id}')" class="bg-red-600 text-white text-xs px-3 py-1 rounded font-bold">거절 차단</button>
                         </div>
                     `;
-                    container.appendChild(item);
+                    q.appendChild(item);
                 });
             });
-        };
+        }
 
-        window.approveQuest = function(id) {
+        window.admApprove = function(id) {
             db.collection('missions').doc(id).update({
                 status: 'approved',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => alert('승인되었습니다. 최상단 미션풀에 배치됩니다.'));
+            }).then(() => alert('정식 미션으로 승인하여 순번에 매핑했습니다.'));
         };
 
-        window.rejectQuest = function(id) {
-            if(confirm('이 질문을 삭제 및 차단하시겠습니까?')) {
+        window.admReject = function(id) {
+            if(confirm('이 제안을 위험 요인으로 판단하여 강제 파기합니까?')) {
                 db.collection('missions').doc(id).delete();
             }
         };
