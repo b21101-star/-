@@ -2,829 +2,460 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>이화여고 일일 퀘스트 (Ewha Daily Quest)</title>
-    <!-- Tailwind CSS 및 Noto Sans KR 폰트 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이화여고 일일 퀘스트</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- Firebase SDK v10 (Compat version for easier single-file deployment) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
     <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #f0f5f1; /* 극도로 차분하고 연한 초록빛이 감도는 회색 바탕 */
-        }
-        /* 이화여고 시그니처 컬러 테마 재정의 */
+        /* 이화 그린 컬러 매뉴얼에 맞춘 색상 정의 */
         .bg-ewha-green { background-color: #00531F; }
-        .bg-ewha-green-dark { background-color: #003a16; }
-        .bg-ewha-green-light { background-color: #e1ebe4; }
+        .bg-ewha-dark { background-color: #003a16; }
+        .bg-ewha-light { background-color: #e6f0ea; }
         .text-ewha-green { color: #00531F; }
+        .text-ewha-dark { color: #003a16; }
         .border-ewha-green { border-color: #00531F; }
         
-        /* 모바일 뷰 고정 (앱 느낌을 위한 맥스 가로폭 고정) */
-        .app-container {
-            max-width: 480px;
-            min-height: 100vh;
-            background-color: #ffffff;
-            box-shadow: 0 0 25px rgba(0, 0, 0, 0.08);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
         /* 스크롤바 숨기기 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="flex justify-center">
+<body class="bg-gray-100 text-black font-sans">
 
-    <div class="app-container w-full flex flex-col justify-between">
+    <div class="max-w-md mx-auto min-h-screen bg-white shadow-2xl flex flex-col justify-between relative overflow-hidden">
         
-        <!-- ========================================== -->
-        <!-- [상단 헤더 바] 로고 클릭 시 언제든 메인으로 이동 -->
-        <!-- ========================================== -->
-        <header id="app-header" class="bg-ewha-green text-white h-14 flex items-center justify-between px-5 sticky top-0 z-50 shadow-sm cursor-pointer select-none">
-            <div class="flex items-center space-x-2" onclick="navigateTo('community')">
-                <i class="fa-solid fa-leaf text-white text-lg"></i>
-                <span class="font-bold tracking-wider text-lg" style="font-family: 'Noto Sans KR';">이화여고 일일 퀘스트</span>
-            </div>
-            <!-- 관리자 로그인 시 왕관 아이콘 표시 -->
-            <div id="admin-indicator" class="hidden text-amber-400">
-                <i class="fa-solid fa-crown" title="관리자 모드 활성화"></i>
-            </div>
+        <header id="app-header" class="hidden bg-white border-b border-gray-200 h-16 flex items-center justify-center sticky top-0 z-50 cursor-pointer">
+            <img src="logo.png" alt="EWHA Quest" class="h-12 object-contain" onclick="switchTab('community')">
         </header>
 
-        <!-- ========================================== -->
-        <!-- [메인 본문 영역] 각 탭 화면들이 렌더링되는 곳 -->
-        <!-- ========================================== -->
-        <main class="flex-1 pb-24 overflow-y-auto no-scrollbar">
-
-            <!-- 0. 구글 로그인 및 계정 잠금 화면 -->
-            <div id="view-login" class="flex flex-col items-center justify-center px-6 py-20 text-center space-y-8">
-                <div class="w-24 h-24 bg-ewha-green-light rounded-full flex items-center justify-center text-ewha-green">
-                    <i class="fa-solid fa-shield-halved text-4xl"></i>
+        <main class="flex-grow p-4 overflow-y-auto no-scrollbar pb-24">
+            
+            <div id="view-login" class="flex flex-col items-center justify-center pt-16 space-y-8">
+                <img src="logo.png" alt="EWHA Quest" class="w-4/5 object-contain">
+                <div class="text-center space-y-2">
+                    <p class="text-gray-600 text-sm">이화여자고등학교 구글 계정으로만<br>로그인 및 이용이 가능합니다.</p>
                 </div>
-                <div class="space-y-3">
-                    <h2 class="text-2xl font-bold text-gray-800">이화인 인증 필요</h2>
-                    <p class="text-gray-500 text-sm leading-relaxed">
-                        본 앱은 이화여자고등학교 학생 및 교직원을 위한<br>
-                        <strong>폐쇄형 소통 공간</strong>입니다.<br>
-                        이화여고 전용 구글 계정으로 로그인해 주세요.
-                    </p>
-                    <div class="inline-block bg-ewha-green-light text-ewha-green font-bold px-3 py-1 rounded text-xs">
-                        @ewha.hs.kr 주소만 사용 가능
-                    </div>
-                </div>
-                <button id="btn-google-login" class="w-full bg-ewha-green hover:bg-ewha-green-dark text-white font-semibold py-3.5 px-6 rounded-xl shadow-md transition flex items-center justify-center space-x-3">
-                    <i class="fa-brands fa-google text-lg"></i>
-                    <span>이화 구글 계정으로 로그인</span>
+                <button id="btn-login" class="bg-ewha-green text-white font-bold py-3 px-8 rounded-lg shadow hover:bg-ewha-dark transition w-full max-w-xs flex items-center justify-center space-x-2">
+                    <i class="fa-brands fa-google"></i>
+                    <span>이화 계정으로 로그인</span>
                 </button>
             </div>
 
-            <!-- 로그인 완료 후 보일 실제 앱 내부 공간 -->
-            <div id="app-content" class="hidden">
+            <div id="view-community" class="hidden space-y-4">
+                <div class="flex justify-between items-center bg-ewha-light p-3 rounded-lg border border-emerald-200">
+                    <span class="font-bold text-ewha-dark"><span id="user-display-name">이화인</span>님</span>
+                    <span class="font-bold text-ewha-green">✨ <span id="user-display-points">0</span> P</span>
+                </div>
                 
-                <!-- 1) 커뮤니티 탭 (메인화면) -->
-                <div id="tab-community" class="tab-view p-5 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-xl font-bold text-gray-800">이화인 정보 공유소</h2>
-                        <div class="flex space-x-2 text-xs">
-                            <button id="sort-recent" onclick="sortMissions('recent')" class="font-bold text-ewha-green border-b-2 border-ewha-green px-1">최신순</button>
-                            <button id="sort-hearts" onclick="sortMissions('hearts')" class="text-gray-400 px-1">인기순</button>
-                        </div>
-                    </div>
-                    
-                    <!-- 커뮤니티 질문 목록 카드 피드 -->
-                    <div id="community-feed-list" class="space-y-4">
-                        <!-- 동적으로 바인딩됩니다 -->
-                    </div>
+                <div id="admin-trigger-box" class="hidden bg-amber-50 border border-amber-400 p-3 rounded-lg flex justify-between items-center">
+                    <span class="text-xs text-amber-800 font-bold">🛡️ 승인 대기 중인 퀘스트가 있습니다.</span>
+                    <button onclick="openAdminPanel()" class="bg-amber-600 text-white text-xs px-2 py-1 rounded font-bold">검증하기</button>
                 </div>
 
-                <!-- 1-Sub) 질문 상세 & 답변 커뮤니티 페이지 (카드 클릭 시 진입) -->
-                <div id="view-mission-detail" class="tab-view hidden p-5 space-y-4">
-                    <button onclick="navigateTo('community')" class="text-sm text-ewha-green font-medium flex items-center space-x-1 mb-2">
-                        <i class="fa-solid fa-chevron-left"></i> <span>목록으로 돌아가기</span>
-                    </button>
-                    
-                    <!-- 선택된 질문 정보 -->
-                    <div id="detail-question-box" class="bg-ewha-green-light border border-ewha-green p-5 rounded-xl">
-                        <!-- 동적 바인딩 -->
+                <h3 class="font-bold text-lg border-b pb-1 text-ewha-dark">📜 미션 히스토리</h3>
+                <div id="mission-box-list" class="space-y-3">
                     </div>
-
-                    <!-- 답변 정렬 버튼 -->
-                    <div class="flex justify-between items-center pt-2">
-                        <span class="text-sm font-bold text-gray-800">이화인들의 조언 (<span id="detail-answer-count">0</span>)</span>
-                    </div>
-
-                    <!-- 답변 작성 구역 -->
-                    <div class="bg-white border rounded-xl p-4 space-y-2">
-                        <textarea id="input-answer" rows="3" placeholder="내 생각이나 이화 생활의 꿀팁을 적어주세요!" class="w-full text-sm border-0 focus:ring-0 resize-none text-gray-700 placeholder-gray-400" required></textarea>
-                        <div class="flex justify-end pt-2 border-t">
-                            <button onclick="submitAnswer()" class="bg-ewha-green hover:bg-ewha-green-dark text-white text-xs font-bold py-2 px-4 rounded-lg">
-                                답변 등록하고 +15P 받기
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 답변 목록들 -->
-                    <div id="detail-answers-list" class="space-y-3">
-                        <!-- 동적 바인딩 -->
-                    </div>
-                </div>
-
-                <!-- 2) 캘린더 탭 -->
-                <div id="tab-calendar" class="tab-view hidden p-5 space-y-4">
-                    <h2 class="text-xl font-bold text-gray-800">학사 일정 캘린더</h2>
-                    <div class="bg-white border rounded-xl p-4 text-center space-y-6">
-                        <!-- 단순 구조화된 미니 달력 목업 -->
-                        <div class="flex justify-between items-center border-b pb-3">
-                            <span class="font-bold text-lg text-gray-700">2026년 7월</span>
-                            <div class="space-x-2 text-gray-400 text-sm">
-                                <i class="fa-solid fa-chevron-left"></i>
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-7 gap-1 text-xs text-gray-500 font-bold">
-                            <span class="text-red-500">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="text-blue-500">토</span>
-                        </div>
-                        <div class="grid grid-cols-7 gap-y-3 text-sm font-medium">
-                            <!-- 7월 달력 날짜 시뮬레이션 -->
-                            <span class="text-gray-300">28</span><span class="text-gray-300">29</span><span class="text-gray-300">30</span><span>1</span><span>2</span><span>3</span><span>4</span>
-                            <span>5</span><span>6</span><span>7</span><span class="bg-ewha-green text-white rounded-full w-7 h-7 flex items-center justify-center mx-auto relative">8<span class="absolute bottom-0 w-1 h-1 bg-amber-400 rounded-full"></span></span><span>9</span><span>10</span><span>11</span>
-                            <span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span><span>18</span>
-                            <span>19</span><span>20</span><span>21</span><span>22</span><span>23</span><span>24</span><span>25</span>
-                            <span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>31</span><span class="text-gray-300">1</span>
-                        </div>
-                        <div class="border-t pt-4 text-left space-y-2 text-xs">
-                            <div class="flex items-center space-x-2">
-                                <span class="w-2.5 h-2.5 bg-ewha-green rounded-full"></span>
-                                <span class="font-bold text-gray-700">오늘 (8일): 오늘의 일일 퀘스트 참여일</span>
-                            </div>
-                            <p class="text-gray-400 pl-4">캘린더 기능은 학교 주요 행사(시험, 축제, 예배 찬송가 안내)와 연동되어 순차 제공될 예정입니다.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3) 오늘의 미션 탭 (신청 및 현황 중심) -->
-                <div id="tab-mission" class="tab-view hidden p-5 space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">🔥 오늘의 미션</h2>
-                    
-                    <!-- 핵심 노출 미션 카드 -->
-                    <div id="active-mission-card" class="bg-white border-2 border-ewha-green rounded-xl p-5 shadow-sm space-y-4">
-                        <!-- 오늘의 미션 내용이 렌더링됩니다 -->
-                    </div>
-
-                    <!-- 궁금한 질문 직접 신청하여 올리는 구역 (포인트 소모) -->
-                    <div class="bg-ewha-green-light p-5 rounded-2xl border border-ewha-green">
-                        <h3 class="font-bold text-ewha-green text-base mb-2">💡 이화인에게 꿀팁 물어보기</h3>
-                        <p class="text-xs text-gray-600 leading-relaxed mb-4">
-                            활동하며 모은 포인트(<span class="font-bold">50P</span>)로 '오늘의 미션'을 신청할 수 있습니다. 
-                            관리자 승인 즉시 하루에 하나씩 대기열 순서대로 노출됩니다.
-                        </p>
-                        <div class="space-y-3">
-                            <input type="text" id="input-new-quest" placeholder="예: 백주년 기념관 층마다 어떤 교실이 있나요?" class="w-full text-sm p-3 border rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-700">
-                            <button onclick="requestNewQuest()" class="w-full bg-ewha-green hover:bg-ewha-green-dark text-white font-bold py-2.5 rounded-xl text-sm transition">
-                                승인 대기열에 등록하기 (50P 차감)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4) 포인트 사용 탭 -->
-                <div id="tab-points" class="tab-view hidden p-5 space-y-6">
-                    <div class="bg-white border p-5 rounded-2xl flex justify-between items-center">
-                        <div>
-                            <p class="text-xs text-gray-400 mb-1">나의 보유 포인트</p>
-                            <span class="text-3xl font-extrabold text-ewha-green" id="user-points-val">0</span> <span class="text-sm text-gray-500 font-bold">P</span>
-                        </div>
-                        <i class="fa-solid fa-gem text-ewha-green text-3xl"></i>
-                    </div>
-
-                    <div class="space-y-4">
-                        <h3 class="font-bold text-gray-800">포인트 상점</h3>
-                        
-                        <div class="grid grid-cols-1 gap-3">
-                            <div class="border rounded-xl p-4 flex items-center justify-between bg-white">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-ewha-green-light rounded-lg flex items-center justify-center text-ewha-green text-lg"><i class="fa-solid fa-file-signature"></i></div>
-                                    <div>
-                                        <h4 class="font-bold text-sm text-gray-800">오늘의 미션 질문 등록권</h4>
-                                        <p class="text-xs text-gray-400">나의 고민을 퀘스트로 등록 (소모성)</p>
-                                    </div>
-                                </div>
-                                <span class="bg-ewha-green text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">50 P</span>
-                            </div>
-                            
-                            <div class="border rounded-xl p-4 flex items-center justify-between bg-white opacity-60">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 text-lg"><i class="fa-solid fa-star"></i></div>
-                                    <div>
-                                        <h4 class="font-bold text-sm text-gray-800">답변 글자 강조 효과 (준비중)</h4>
-                                        <p class="text-xs text-gray-400">내 조언글에 형광펜 처리 효과 부여</p>
-                                    </div>
-                                </div>
-                                <span class="bg-gray-400 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">100 P</span>
-                            </div>
-                            
-                            <div class="border rounded-xl p-4 flex items-center justify-between bg-white opacity-60">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 text-lg"><i class="fa-solid fa-ticket"></i></div>
-                                    <div>
-                                        <h4 class="font-bold text-sm text-gray-800">학교 주변 제휴 할인 쿠폰 (추후 제휴)</h4>
-                                        <p class="text-xs text-gray-400">이화인 제휴 맛집/카페 쿠폰 발행</p>
-                                    </div>
-                                </div>
-                                <span class="bg-gray-400 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">500 P</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 5) 마이페이지 탭 (+ 관리자 전용 대시보드) -->
-                <div id="tab-mypage" class="tab-view hidden p-5 space-y-6">
-                    <div class="bg-white border rounded-2xl p-5 flex items-center space-x-4">
-                        <div class="w-14 h-14 bg-ewha-green text-white rounded-full flex items-center justify-center text-xl font-bold" id="user-avatar-text">이</div>
-                        <div>
-                            <h3 class="font-bold text-gray-800" id="user-display-name">이화인</h3>
-                            <p class="text-xs text-gray-400" id="user-display-email">student@ewha.hs.kr</p>
-                        </div>
-                    </div>
-
-                    <!-- 🛡️ [강조] 나와 내 친구만 접근 가능한 하드코딩된 관리자 영역 -->
-                    <div id="admin-panel" class="hidden border-2 border-amber-500 bg-amber-50 rounded-2xl p-5 space-y-4">
-                        <div class="flex items-center space-x-2 text-amber-900">
-                            <i class="fa-solid fa-shield-halved text-lg"></i>
-                            <h3 class="font-bold text-base">관리자 미션 검증 시스템</h3>
-                        </div>
-                        <p class="text-xs text-amber-800 leading-relaxed">
-                            친구들과 학생들이 익명으로 제안한 미션 풀입니다. 학교 규칙을 위반하거나, 악성/이상한 질문은 거부하고 클린한 유익한 미션만 골라 승인하십시오.
-                        </p>
-                        
-                        <!-- 승인 대기중인 미션 리스트 -->
-                        <div id="pending-missions-container" class="space-y-3 max-h-80 overflow-y-auto pr-1">
-                            <p class="text-xs text-gray-400 text-center py-4">대기 중인 미션이 존재하지 않습니다.</p>
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <button onclick="logout()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition">
-                            로그아웃
-                        </button>
-                    </div>
-                </div>
-
             </div>
+
+            <div id="view-mission-detail" class="hidden space-y-4">
+                <button onclick="switchTab('community')" class="text-sm font-bold text-ewha-green mb-2"><i class="fa-solid fa-arrow-left"></i> 목록으로 가기</button>
+                
+                <div id="selected-mission-card" class="bg-ewha-light border-2 border-ewha-green p-4 rounded-lg font-bold text-ewha-dark shadow-sm">
+                    </div>
+
+                <div class="flex space-x-2">
+                    <input type="text" id="search-input" placeholder="원하는 글의 키워드를 입력하세요" class="flex-grow border p-2 rounded text-sm focus:outline-ewha-green">
+                    <button onclick="filterPosts()" class="bg-ewha-green text-white px-4 rounded text-sm hover:bg-ewha-dark font-bold">검색</button>
+                </div>
+
+                <div class="flex justify-end space-x-4 text-xs font-bold text-gray-500">
+                    <button id="sort-recent" onclick="changeSort('recent')" class="text-ewha-green underline">최신순</button>
+                    <button id="sort-likes" onclick="changeSort('likes')">좋아요 많은 순</button>
+                </div>
+
+                <div id="posts-container" class="space-y-3">
+                    </div>
+            </div>
+
+            <div id="view-write" class="hidden space-y-4">
+                <button onclick="switchTab('community')" class="text-sm font-bold text-ewha-green mb-2"><i class="fa-solid fa-arrow-left"></i> 취소</button>
+                <h3 class="font-bold text-lg text-ewha-dark">📝 미션에 답변 남기기</h3>
+                <div id="write-mission-title" class="p-3 bg-gray-50 rounded border font-medium text-sm"></div>
+                <p class="text-xs text-gray-500">* 첫 답변 등록 시 즉시 +5포인트가 적립됩니다.</p>
+                <textarea id="post-content" rows="6" placeholder="이화인들에게 도움이 될 생생한 정보를 공유해주세요!" class="w-full border p-3 rounded-lg text-sm focus:outline-ewha-green"></textarea>
+                <button id="btn-submit-post" class="w-full bg-ewha-green text-white py-3 rounded-lg font-bold hover:bg-ewha-dark transition">답변 등록하고 5P 받기</button>
+            </div>
+
+            <div id="view-admin" class="hidden space-y-4">
+                <button onclick="switchTab('community')" class="text-sm font-bold text-ewha-green mb-2"><i class="fa-solid fa-arrow-left"></i> 나가기</button>
+                <h3 class="font-bold text-lg text-amber-800">🛡️ 관리자 미션 검증 대시보드</h3>
+                <p class="text-xs text-gray-500">지정된 관리자 계정(b21101@ewha.hs.kr)만 확인 가능합니다. 이상한 질문을 차단하세요.</p>
+                <div id="admin-pending-list" class="space-y-3"></div>
+            </div>
+
+            <div id="view-calendar" class="hidden text-center py-20 text-gray-400">📅 캘린더 창 준비 중입니다.</div>
+            <div id="view-points" class="hidden text-center py-20 text-gray-400">🛍️ 포인트 사용 창 준비 중입니다.</div>
+            <div id="view-mypage" class="hidden text-center py-20 text-gray-400">👤 마이페이지 준비 중입니다.</div>
+
         </main>
 
-        <!-- ========================================== -->
-        <!-- [하단 내비게이션 바] 오늘의 미션 중심 강조 디자인 -->
-        <!-- ========================================== -->
-        <footer id="app-footer" class="hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-ewha-green h-20 border-t border-emerald-900 flex justify-around items-center px-2 z-50 shadow-lg">
-            
-            <!-- 1. 커뮤니티 (메인) -->
-            <button id="nav-community" onclick="navigateTo('community')" class="flex flex-col items-center justify-center w-14 text-white opacity-60 hover:opacity-100 transition">
-                <i class="fa-solid fa-house text-lg mb-1"></i>
-                <span class="text-[10px] font-medium">커뮤니티</span>
+        <nav id="app-nav" class="hidden bg-ewha-green text-white h-20 flex items-center justify-between px-2 border-t border-ewha-dark fixed bottom-0 max-w-md w-full z-50">
+            <button onclick="switchTab('community')" id="tab-community" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
+                <i class="fa-solid fa-users text-lg"></i>
+                <span class="text-[10px]">커뮤니티</span>
             </button>
-
-            <!-- 2. 캘린더 -->
-            <button id="nav-calendar" onclick="navigateTo('calendar')" class="flex flex-col items-center justify-center w-14 text-white opacity-60 hover:opacity-100 transition">
-                <i class="fa-solid fa-calendar-days text-lg mb-1"></i>
-                <span class="text-[10px] font-medium">캘린더</span>
+            <button onclick="switchTab('calendar')" id="tab-calendar" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
+                <i class="fa-solid fa-calendar-days text-lg"></i>
+                <span class="text-[10px]">캘린더</span>
             </button>
-
-            <!-- 3. 오늘의 미션 (돌출 및 진한 초록 강조 구조) -->
-            <button id="nav-mission" onclick="navigateTo('mission')" class="flex flex-col items-center justify-center w-18 h-18 bg-ewha-green-dark border-4 border-white rounded-full -translate-y-4 text-white shadow-md active:scale-95 transition z-10">
-                <i class="fa-solid fa-bullseye text-xl mb-0.5"></i>
-                <span class="text-[10px] font-bold">오늘의 미션</span>
+            <button onclick="openTodayMissionDirectly()" id="tab-today" class="flex-1 flex flex-col items-center justify-center space-y-1 bg-ewha-dark py-2 font-bold transition">
+                <i class="fa-solid fa-bolt text-2xl text-amber-300"></i>
+                <span class="text-xs">오늘의 미션</span>
             </button>
-
-            <!-- 4. 포인트 사용 -->
-            <button id="nav-points" onclick="navigateTo('points')" class="flex flex-col items-center justify-center w-14 text-white opacity-60 hover:opacity-100 transition">
-                <i class="fa-solid fa-gem text-lg mb-1"></i>
-                <span class="text-[10px] font-medium">포인트</span>
+            <button onclick="switchTab('points')" id="tab-points" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
+                <i class="fa-solid fa-gift text-lg"></i>
+                <span class="text-[10px]">포인트 사용</span>
             </button>
-
-            <!-- 5. 마이페이지 -->
-            <button id="nav-mypage" onclick="navigateTo('mypage')" class="flex flex-col items-center justify-center w-14 text-white opacity-60 hover:opacity-100 transition">
-                <i class="fa-solid fa-user text-lg mb-1"></i>
-                <span class="text-[10px] font-medium">내 정보</span>
+            <button onclick="switchTab('mypage')" id="tab-mypage" class="flex-1 flex flex-col items-center justify-center space-y-1 opacity-70 transition">
+                <i class="fa-solid fa-user text-lg"></i>
+                <span class="text-[10px]">마이페이지</span>
             </button>
-            
-        </footer>
+        </nav>
 
     </div>
 
-    <!-- 스크립트 기능 처리부 -->
     <script>
-        // ==========================================
-        // 🚨 [필수 사항] 파이어베이스 연결 정보 입력하기 🚨
-        // ==========================================
+        // ⚠️ [필수] 파이어베이스 정보 입력칸
         const firebaseConfig = {
   		apiKey: "AIzaSyAsJQDjD6o-j9L_lNj-dked7gULc4fcFKo",
-  		authDomain: "ewha-40d65.firebaseapp.com",
+ 		 authDomain: "ewha-40d65.firebaseapp.com",
   		projectId: "ewha-40d65",
   		storageBucket: "ewha-40d65.firebasestorage.app",
   		messagingSenderId: "491468098459",
   		appId: "1:491468098459:web:54810c396c128ee882af3e",
-  		measurementId: "G-RJKD8DMSYW"
         };
 
-        // ==========================================
-        // 👑 [관리자 이메일 목록 설정] 나와 내 친구 단 둘만 가능하도록 세팅
-        // ==========================================
-        const ADMIN_EMAILS = [
-            "me@ewha.hs.kr",      // 나
-            "friend@ewha.hs.kr"   // 내 친구
-        ];
+        // 🛡️ 지정된 전용 관리자 이메일 고정
+        const ADMIN_EMAIL = "b21101@ewha.hs.kr";
 
-        // 파이어베이스 이니셜라이즈
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const provider = new firebase.auth.GoogleAuthProvider();
 
-        // 전역 상태 변수
         let currentUser = null;
-        let userData = { points: 0 };
-        let currentTab = 'community';
-        let missions = [];
-        let activeMissionId = null; 
-        let activeDetailId = null;
-        let currentSort = 'recent'; // 'recent' or 'hearts'
+        let userPoints = 0;
+        let activeMissionId = null;
+        let currentSort = 'recent'; 
+        let participatedMissions = []; 
 
-        // DOM 로드 완료 후 실행
-        document.addEventListener('DOMContentLoaded', () => {
-            initAuth();
-            setupLoginButton();
+        // 로그인 바인딩
+        document.getElementById('btn-login').addEventListener('click', () => {
+            auth.signInWithPopup(provider).then((result) => {
+                if (!result.user.email.endsWith('@ewha.hs.kr')) {
+                    alert('이화여고 공식 구글 계정(@ewha.hs.kr)만 진입할 수 있습니다.');
+                    auth.signOut();
+                    location.reload();
+                }
+            }).catch(() => alert('로그인 처리 중 에러가 발생했습니다.'));
         });
 
-        // 1. Google 로그인 및 @ewha.hs.kr 검증부
-        function setupLoginButton() {
-            const btn = document.getElementById('btn-google-login');
-            btn.addEventListener('click', () => {
-                auth.signInWithPopup(provider).then((result) => {
-                    const email = result.user.email;
-                    // 이화여고 전용 구글 메일만 전면 허용
-                    if (email && email.endsWith('@ewha.hs.kr')) {
-                        console.log('이화여고 전용 메일 확인됨:', email);
-                    } else {
-                        alert('이화여고 공식 구글 계정(@ewha.hs.kr) 주소로만 접속할 수 있습니다.');
-                        auth.signOut();
-                    }
-                }).catch((err) => {
-                    console.error('로그인 에러:', err);
-                    alert('로그인 처리 중 에러가 발생했습니다. 다시 시도해 주세요.');
-                });
-            });
-        }
-
-        // 2. 인증 상태 변화 추적
-        function initAuth() {
-            auth.onAuthStateChanged((user) => {
-                if (user && user.email.endsWith('@ewha.hs.kr')) {
-                    currentUser = user;
-                    document.getElementById('view-login').classList.add('hidden');
-                    document.getElementById('app-content').classList.remove('hidden');
-                    document.getElementById('app-footer').classList.remove('hidden');
-                    
-                    // 관리자 왕관 마크 활성화 판단
-                    if (ADMIN_EMAILS.includes(user.email)) {
-                        document.getElementById('admin-indicator').classList.remove('hidden');
-                        document.getElementById('admin-panel').classList.remove('hidden');
-                    } else {
-                        document.getElementById('admin-indicator').classList.add('hidden');
-                        document.getElementById('admin-panel').classList.add('hidden');
-                    }
-
-                    // 마이페이지 개인정보 세팅
-                    document.getElementById('user-display-name').innerText = user.displayName || '이화인';
-                    document.getElementById('user-display-email').innerText = user.email;
-                    document.getElementById('user-avatar-text').innerText = (user.displayName || '이')[0];
-
-                    // 사용자 데이터 로딩 (포인트 등)
-                    fetchOrCreateUserData();
-                    
-                    // 기본 화면인 '커뮤니티'를 실행
-                    navigateTo('community');
-                    
-                    // 데이터 리스너 작동 시작
-                    syncMissions();
-                    if (ADMIN_EMAILS.includes(user.email)) {
-                        syncPendingMissions();
-                    }
-                } else {
-                    currentUser = null;
-                    document.getElementById('view-login').classList.remove('hidden');
-                    document.getElementById('app-content').classList.add('hidden');
-                    document.getElementById('app-footer').classList.add('hidden');
+        // 인증 상태 추적 및 기초 데이터 동기화
+        auth.onAuthStateChanged((user) => {
+            if (user && user.email.endsWith('@ewha.hs.kr')) {
+                currentUser = user;
+                document.getElementById('view-login').classList.add('hidden');
+                document.getElementById('app-header').classList.remove('hidden');
+                document.getElementById('app-nav').classList.remove('hidden');
+                document.getElementById('user-display-name').innerText = user.displayName || '이화인';
+                
+                // 유저 포인트 리스너 및 참여 기록 가져오기
+                syncUserData();
+                // 초기 실행은 항상 커뮤니티 창 실행
+                switchTab('community');
+                
+                if (user.email === ADMIN_EMAIL) {
+                    document.getElementById('admin-trigger-box').classList.remove('hidden');
                 }
-            });
-        }
-
-        // 로그아웃
-        function logout() {
-            if(confirm('로그아웃 하시겠습니까?')) {
-                auth.signOut().then(() => {
-                    location.reload();
-                });
+            } else {
+                document.getElementById('view-login').classList.remove('hidden');
+                document.getElementById('app-header').classList.add('hidden');
+                document.getElementById('app-nav').classList.add('hidden');
             }
-        }
+        });
 
-        // 3. 사용자 포인트 관리 시스템
-        function fetchOrCreateUserData() {
-            if (!currentUser) return;
-            const userRef = db.collection('users').doc(currentUser.uid);
-            
-            userRef.onSnapshot((doc) => {
+        // 사용자 데이터 및 포인트 로드
+        function syncUserData() {
+            db.collection('users').doc(currentUser.uid).onSnapshot((doc) => {
                 if (doc.exists) {
-                    userData = doc.data();
+                    userPoints = doc.data().points || 0;
+                    participatedMissions = doc.data().participated || [];
                 } else {
-                    // 최초 유저 가입 시 기본 50P 증정
-                    userData = { points: 50 };
-                    userRef.set(userData);
+                    userPoints = 0;
+                    db.collection('users').doc(currentUser.uid).set({ points: 0, participated: [] });
                 }
-                document.getElementById('user-points-val').innerText = userData.points;
+                document.getElementById('user-display-points').innerText = userPoints;
+                loadMissions(); 
             });
         }
 
-        // 4. 네비게이션 및 탭 전환 로직
-        function navigateTo(tabName) {
-            currentTab = tabName;
-            
-            // 모든 뷰 가리기
-            document.querySelectorAll('.tab-view').forEach((view) => {
-                view.classList.add('hidden');
-            });
-            
-            // 대상 뷰 보여주기
-            const targetView = document.getElementById(`tab-${tabName}`) || document.getElementById(`view-${tabName}`);
-            if (targetView) {
-                targetView.classList.remove('hidden');
-            }
-
-            // 하단 내비게이션 활성화 비주얼 초기화
-            const navs = ['community', 'calendar', 'mission', 'points', 'mypage'];
-            navs.forEach(nav => {
-                const btn = document.getElementById(`nav-${nav}`);
-                if (btn) {
-                    if (nav === tabName) {
-                        btn.classList.add('opacity-100');
-                        btn.classList.remove('opacity-60');
-                    } else {
-                        btn.classList.remove('opacity-100');
-                        btn.classList.add('opacity-60');
-                    }
-                }
-            });
-
-            // 탭으로 강제 이동 시 일부 초기화
-            if (tabName === 'mission') {
-                renderTodayMission();
-            } else if (tabName === 'community') {
-                renderMissionsFeed();
-            }
-        }
-
-        // 5. 미션 데이터 Firestore 동기화 (승인된 목록만 가져와 최신 질문을 위로 정렬)
-        function syncMissions() {
+        // 전체 미션 상자 목록 로드 (최신 미션이 맨 위에 오도록 세로 정렬)
+        function loadMissions() {
             db.collection('missions')
               .where('status', '==', 'approved')
               .orderBy('createdAt', 'desc')
               .onSnapshot((snapshot) => {
-                  missions = [];
-                  snapshot.forEach((doc) => {
-                      missions.push({ id: doc.id, ...doc.data() });
-                  });
-                  
-                  // 가장 최신 미션 1개를 오늘의 대표 미션으로 선정
-                  if (missions.length > 0) {
-                      activeMissionId = missions[0].id;
-                  } else {
-                      activeMissionId = null;
-                  }
-                  
-                  renderMissionsFeed();
-                  renderTodayMission();
-              });
-        }
-
-        // 6. 오늘의 미션 화면 렌더링
-        function renderTodayMission() {
-            const card = document.getElementById('active-mission-card');
-            
-            if (!activeMissionId) {
-                card.innerHTML = `
-                    <div class="text-center py-6 text-gray-400 text-sm">
-                        <p class="font-medium">현재 등록되어 활성화된 미션이 없습니다.</p>
-                        <p class="text-xs mt-1">이화인들을 위해 유익한 질문을 아래에서 먼저 제안해 보세요!</p>
-                    </div>`;
-                return;
-            }
-
-            const currentActive = missions.find(m => m.id === activeMissionId);
-            if (!currentActive) return;
-
-            card.innerHTML = `
-                <div class="inline-block bg-ewha-green-light text-ewha-green text-[11px] font-bold px-3 py-1 rounded-full">
-                    <i class="fa-solid fa-circle-play mr-1"></i> 진행 중인 일일 미션
-                </div>
-                <h3 class="text-lg font-bold text-gray-800 leading-snug mt-2">"${currentActive.content}"</h3>
-                <p class="text-xs text-gray-400">등록일: ${new Date(currentActive.createdAt?.seconds * 1000).toLocaleDateString()}</p>
-                <div class="pt-4 border-t flex space-x-3">
-                    <button onclick="goToMissionDetail('${currentActive.id}')" class="flex-1 bg-ewha-green hover:bg-ewha-green-dark text-white font-bold py-2.5 rounded-xl text-xs transition text-center">
-                        <i class="fa-solid fa-comments mr-1"></i> 이화인 답변 구경 & 작성하기 (+15P)
-                    </button>
-                </div>
-            `;
-        }
-
-        // 7. 커뮤니티 메인 화면 피드 목록 렌더링
-        function renderMissionsFeed() {
-            const container = document.getElementById('community-feed-list');
-            if (missions.length === 0) {
-                container.innerHTML = `<p class="text-center py-12 text-gray-400 text-sm">등록된 미션이 없습니다.</p>`;
-                return;
-            }
-
-            // 정렬 순서 적용
-            let sorted = [...missions];
-            if (currentSort === 'hearts') {
-                sorted.sort((a, b) => (b.heartCount || 0) - (a.heartCount || 0));
-            }
-
-            container.innerHTML = '';
-            sorted.forEach((item, index) => {
-                const dateStr = item.createdAt ? new Date(item.createdAt.seconds * 1000).toLocaleDateString() : '';
-                const card = document.createElement('div');
-                card.className = "bg-white border rounded-xl p-4 shadow-sm hover:border-emerald-700 transition cursor-pointer flex flex-col justify-between space-y-3";
-                card.onclick = () => goToMissionDetail(item.id);
-                
-                // 첫 카드만 최신 딱지 부여
-                const isNewBadge = (index === 0 && currentSort === 'recent') ? 
-                    `<span class="bg-red-50 text-red-600 border border-red-200 text-[9px] font-bold px-1.5 py-0.5 rounded">NEW</span>` : '';
-
-                card.innerHTML = `
-                    <div class="space-y-1">
-                        <div class="flex items-center space-x-2 text-xs">
-                            <span class="text-ewha-green font-bold">Q.${missions.length - index}</span>
-                            <span class="text-gray-400">${dateStr}</span>
-                            ${isNewBadge}
-                        </div>
-                        <h4 class="font-bold text-gray-800 leading-snug text-base text-ellipsis overflow-hidden">"${item.content}"</h4>
-                    </div>
-                    <div class="flex items-center justify-between pt-2 border-t text-xs text-gray-500">
-                        <span class="text-ewha-green font-semibold">이화인 조언 보러가기 <i class="fa-solid fa-angle-right ml-0.5"></i></span>
-                        <div class="flex space-x-3">
-                            <span><i class="fa-regular fa-comment mr-1"></i>${item.answerCount || 0}</span>
-                            <span><i class="fa-regular fa-heart mr-1"></i>${item.heartCount || 0}</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        // 커뮤니티 피드 필터 전환
-        function sortMissions(type) {
-            currentSort = type;
-            const btnRecent = document.getElementById('sort-recent');
-            const btnHearts = document.getElementById('sort-hearts');
-
-            if (type === 'recent') {
-                btnRecent.className = "font-bold text-ewha-green border-b-2 border-ewha-green px-1";
-                btnHearts.className = "text-gray-400 px-1";
-            } else {
-                btnHearts.className = "font-bold text-ewha-green border-b-2 border-ewha-green px-1";
-                btnRecent.className = "text-gray-400 px-1";
-            }
-            renderMissionsFeed();
-        }
-
-        // 8. 질문 상세 페이지로 진입
-        function goToMissionDetail(missionId) {
-            activeDetailId = missionId;
-            navigateTo('mission-detail');
-
-            // 렌더링 헤드 채우기
-            const targetQuest = missions.find(m => m.id === missionId);
-            if (!targetQuest) return;
-
-            const qBox = document.getElementById('detail-question-box');
-            qBox.innerHTML = `
-                <div class="text-[11px] uppercase tracking-wider font-bold text-ewha-green opacity-80 mb-1">Ewha Daily Mission</div>
-                <h3 class="text-lg font-bold text-gray-800 leading-snug">"${targetQuest.content}"</h3>
-                <p class="text-xs text-gray-500 mt-2">해당 문제에 직면해 고민하는 이화인들을 위한 선배·동급생들의 실제 조언창입니다.</p>
-            `;
-
-            // 답변 목록 실시간 동기화 바인딩
-            syncAnswers(missionId);
-        }
-
-        // 9. 특정 미션의 답변 목록 가져오기 및 렌더링
-        function syncAnswers(missionId) {
-            db.collection('missions').doc(missionId).collection('answers')
-              .orderBy('createdAt', 'desc')
-              .onSnapshot((snapshot) => {
-                  const list = document.getElementById('detail-answers-list');
-                  document.getElementById('detail-answer-count').innerText = snapshot.size;
+                  const boxListContainer = document.getElementById('mission-box-list');
+                  boxListContainer.innerHTML = '';
                   
                   if (snapshot.empty) {
-                      list.innerHTML = `<p class="text-center py-10 text-gray-400 text-sm">첫 번째 조언을 남기고 +15P 보상을 쟁취하세요!</p>`;
+                      boxListContainer.innerHTML = `<p class="text-center py-6 text-gray-400 text-sm">등록된 전체 미션이 없습니다.</p>`;
                       return;
                   }
 
-                  list.innerHTML = '';
-                  snapshot.forEach((doc) => {
-                      const data = doc.data();
-                      const ansId = doc.id;
-                      
-                      const item = document.createElement('div');
-                      item.className = "bg-white border rounded-xl p-4 space-y-2 relative";
-                      
-                      const dateStr = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : '';
-
-                      item.innerHTML = `
-                          <div class="flex justify-between items-center text-xs text-gray-400">
-                              <span class="font-bold text-ewha-green">이화인 조언자</span>
-                              <span>${dateStr}</span>
-                          </div>
-                          <p class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">${data.content}</p>
-                          <div class="flex justify-end pt-1">
-                              <button onclick="likeAnswer('${missionId}', '${ansId}', '${data.uid}')" class="text-xs font-bold text-gray-500 hover:text-red-500 flex items-center space-x-1">
-                                  <i class="fa-regular fa-heart"></i>
-                                  <span>하트 ${data.hearts || 0}</span>
-                              </button>
-                          </div>
-                      `;
-                      list.appendChild(item);
-                  });
-              });
-        }
-
-        // 10. 답변 작성하고 +15P 획득 로직
-        function submitAnswer() {
-            const txtArea = document.getElementById('input-answer');
-            const val = txtArea.value.trim();
-            if(!val) return alert('조언 내용을 먼저 입력해주세요.');
-
-            const missionId = activeDetailId;
-
-            // Firestore Subcollection에 추가
-            db.collection('missions').doc(missionId).collection('answers').add({
-                content: val,
-                uid: currentUser.uid,
-                hearts: 0,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                // 부모 미션의 답변 개수 업데이트
-                const missionRef = db.collection('missions').doc(missionId);
-                db.runTransaction((transaction) => {
-                    return transaction.get(missionRef).then((resDoc) => {
-                        const newCount = (resDoc.data().answerCount || 0) + 1;
-                        transaction.update(missionRef, { answerCount: newCount });
-                    });
-                });
-
-                // 사용자 포인트 +15P 획득
-                const userRef = db.collection('users').doc(currentUser.uid);
-                db.runTransaction((transaction) => {
-                    return transaction.get(userRef).then((resDoc) => {
-                        const currentPoints = resDoc.data().points || 0;
-                        transaction.update(userRef, { points: currentPoints + 15 });
-                    });
-                });
-
-                txtArea.value = '';
-                alert('이화인을 위한 귀중한 지혜가 등록되었습니다! +15포인트가 즉시 지급되었습니다. 🥳');
-            });
-        }
-
-        // 11. 조언에 하트 공감 누르기 (+5P 추가 지급 연동)
-        function likeAnswer(missionId, answerId, targetUserUid) {
-            const answerRef = db.collection('missions').doc(missionId).collection('answers').doc(answerId);
-            
-            db.runTransaction((transaction) => {
-                return transaction.get(answerRef).then((resDoc) => {
-                    const nextHearts = (resDoc.data().hearts || 0) + 1;
-                    transaction.update(answerRef, { hearts: nextHearts });
-                });
-            }).then(() => {
-                // 부모 미션의 전체 하트수 동기화
-                const mRef = db.collection('missions').doc(missionId);
-                mRef.update({
-                    heartCount: firebase.firestore.FieldValue.increment(1)
-                });
-
-                // 답변을 쓴 당사자(targetUserUid)에게 +5P 증정 로직
-                const targetUserRef = db.collection('users').doc(targetUserUid);
-                targetUserRef.update({
-                    points: firebase.firestore.FieldValue.increment(5)
-                });
-
-                alert('하트를 남겼습니다! 조언을 남겨준 친구에게 +5포인트가 전달되었습니다. ❤️');
-            });
-        }
-
-        // 12. 사용자가 포인트를 소모하여 미션 제안하는 로직 (50P 차감)
-        function requestNewQuest() {
-            const input = document.getElementById('input-new-quest');
-            const txt = input.value.trim();
-            if (!txt) return alert('등록할 질문을 작성해 주세요.');
-
-            if (userData.points < 50) {
-                return alert('포인트가 부족합니다. (필요: 50P / 보유: ' + userData.points + 'P)\n미션에 조언을 남겨 포인트를 먼저 모으십시오.');
-            }
-
-            if (confirm('50포인트를 사용하여 관리자 검토 대기열에 이 질문을 제출하시겠습니까?')) {
-                // 포인트 차감
-                const userRef = db.collection('users').doc(currentUser.uid);
-                userRef.update({
-                    points: firebase.firestore.FieldValue.increment(-50)
-                }).then(() => {
-                    // 승인 대기 미션 업로드
-                    db.collection('missions').add({
-                        content: txt,
-                        suggestedBy: currentUser.email,
-                        status: 'pending', // 관리자 승인 대기 상태
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        answerCount: 0,
-                        heartCount: 0
-                    }).then(() => {
-                        alert('대기열 제출 성공! 관리자가 신속히 이상한 질문인지 판단 후 승인 및 하루에 하나씩 순차 등록해 드립니다.');
-                        input.value = '';
-                        navigateTo('community');
-                    });
-                });
-            }
-        }
-
-        // ==========================================
-        // 👑 [관리자 전용 비즈니스 로직 및 UI 바인딩]
-        // ==========================================
-        
-        // 미승인 대기 미션 실시간 리스너 동기화
-        function syncPendingMissions() {
-            db.collection('missions')
-              .where('status', '==', 'pending')
-              .orderBy('createdAt', 'asc')
-              .onSnapshot((snapshot) => {
-                  const container = document.getElementById('pending-missions-container');
-                  
-                  if (snapshot.empty) {
-                      container.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">⏳ 대기 중인 유해성 검증 미션이 없습니다.</p>`;
-                      return;
-                  }
-
-                  container.innerHTML = '';
+                  let isFirst = true;
                   snapshot.forEach((doc) => {
                       const data = doc.data();
                       const id = doc.id;
-                      
+                      const hasParticipated = participatedMissions.includes(id);
+
                       const box = document.createElement('div');
-                      box.className = "bg-white p-3.5 rounded-xl border border-amber-200 space-y-3 shadow-sm";
+                      box.className = "border border-gray-200 p-4 rounded-lg shadow-sm flex justify-between items-center relative bg-white hover:border-ewha-green cursor-pointer transition";
+                      
+                      // 가장 위 상자(최신 미션) 표기법 다르게 적용 가능
+                      const tag = isFirst ? `<span class="text-xs bg-ewha-green text-white px-2 py-0.5 rounded mr-2">오늘</span>` : `<span class="text-xs bg-gray-400 text-white px-2 py-0.5 rounded mr-2">지난미션</span>`;
+                      isFirst = false;
+
                       box.innerHTML = `
-                          <div class="text-sm font-semibold text-gray-800 leading-snug">" ${data.content} "</div>
-                          <div class="flex justify-between items-center text-[10px] text-gray-400 border-t pt-2">
-                              <span>제안: ${data.suggestedBy}</span>
-                              <div class="space-x-1">
-                                  <button onclick="approveMission('${id}')" class="bg-ewha-green hover:bg-ewha-green-dark text-white font-bold px-3 py-1 rounded text-[10px] transition">승인</button>
-                                  <button onclick="rejectMission('${id}')" class="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1 rounded text-[10px] transition">영구삭제</button>
-                              </div>
+                          <div class="flex-grow pr-8" onclick="openMissionDetail('${id}', '${data.content}')">
+                              <div class="flex items-center mb-1">${tag}</div>
+                              <div class="font-medium text-black text-sm">${data.content}</div>
                           </div>
+                          ${!hasParticipated ? `
+                            <button onclick="goToWritePage(event, '${id}', '${data.content}')" class="absolute top-2 right-2 text-ewha-green text-lg p-1 hover:scale-110 transition">
+                                <i class="fa-solid fa-circle-plus"></i>
+                            </button>
+                          ` : ''}
                       `;
-                      container.appendChild(box);
+                      boxListContainer.appendChild(box);
                   });
               });
-        }
 
-        // 관리자 기능 - 미션 승인 처리
-        window.approveMission = function(id) {
-            db.collection('missions').doc(id).update({
-                status: 'approved',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() // 승인 순서대로 최상위에 배치하기 위해 시간 갱신
-            }).then(() => {
-                alert('미션 승인 완료! 즉시 오늘의 미션 대기열 순서로 투입되었습니다.');
-            });
-        }
-
-        // 관리자 기능 - 부적절 미션 영구거절 및 소각 처리
-        window.rejectMission = function(id) {
-            if(confirm('유해 게시물 혹은 이상한 질문으로 판단해 영구 차단(삭제)하시겠습니까?')) {
-                db.collection('missions').doc(id).delete().then(() => {
-                    alert('미션 소각이 정상적으로 이루어졌습니다.');
+            // 관리자 전용 대기 리스트 싱크
+            if (currentUser.email === ADMIN_EMAIL) {
+                db.collection('missions').where('status', '==', 'pending').onSnapshot(snap => {
+                    const trigger = document.getElementById('admin-trigger-box');
+                    if(snap.empty) trigger.classList.add('hidden');
+                    else trigger.classList.remove('hidden');
                 });
             }
         }
 
+        // 화면 전환 로직
+        function switchTab(tabName) {
+            const views = ['view-community', 'view-mission-detail', 'view-write', 'view-admin', 'view-calendar', 'view-points', 'view-mypage'];
+            views.forEach(v => document.getElementById(v).classList.add('hidden'));
+            
+            document.getElementById(`view-${tabName}`).classList.remove('hidden');
+
+            // 탭 활성화 비주얼 업데이트 (3번째 탭 강조 유지하면서 나머지 불투명도 조절)
+            const tabs = ['community', 'calendar', 'points', 'mypage'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (t === tabName) el.classList.remove('opacity-70');
+                else el.classList.add('opacity-70');
+            });
+        }
+
+        // 3번째 강조 버튼 클릭 시 동작
+        function openTodayMissionDirectly() {
+            db.collection('missions')
+              .where('status', '==', 'approved')
+              .orderBy('createdAt', 'desc')
+              .limit(1)
+              .get()
+              .then(snap => {
+                  if(!snap.empty) {
+                      const doc = snap.docs[0];
+                      openMissionDetail(doc.id, doc.data().content);
+                  } else {
+                      switchTab('community');
+                      alert('오늘 등록된 미션이 없습니다. 커뮤니티 창으로 이동합니다.');
+                  }
+              });
+        }
+
+        // 글 작성 페이지 이동
+        function goToWritePage(e, id, content) {
+            e.stopPropagation();
+            activeMissionId = id;
+            document.getElementById('write-mission-title').innerText = `🎯 미션: ${content}`;
+            document.getElementById('post-content').value = '';
+            switchTab('write');
+        }
+
+        // 답변 글 등록 로직 (+5포인트 지급)
+        document.getElementById('btn-submit-post').addEventListener('click', () => {
+            const content = document.getElementById('post-content').value.trim();
+            if(!content) return alert('내용을 입력해주세요.');
+
+            db.collection('posts').add({
+                missionId: activeMissionId,
+                content: content,
+                authorUid: currentUser.uid,
+                authorName: currentUser.displayName || '익명의 이화인',
+                likes: 0,
+                likedBy: [],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                // 글 작성 유저에게 5포인트 적립 및 참여 목록 추가
+                db.collection('users').doc(currentUser.uid).update({
+                    points: firebase.firestore.FieldValue.increment(5),
+                    participated: firebase.firestore.FieldValue.arrayUnion(activeMissionId)
+                });
+                alert('답변이 성공적으로 등록되었습니다! 5포인트가 지급되었습니다.');
+                switchTab('community');
+            });
+        });
+
+        // 특정 미션 세부조회 창 진입
+        function openMissionDetail(id, content) {
+            activeMissionId = id;
+            document.getElementById('selected-mission-card').innerText = `🎯 ${content}`;
+            document.getElementById('search-input').value = '';
+            switchTab('mission-detail');
+            loadPosts();
+        }
+
+        // 정렬 기준 변경
+        function changeSort(type) {
+            currentSort = type;
+            document.getElementById('sort-recent').className = type === 'recent' ? 'text-ewha-green underline' : '';
+            document.getElementById('sort-likes').className = type === 'likes' ? 'text-ewha-green underline' : '';
+            loadPosts();
+        }
+
+        // 글 검색 필터링 연동
+        function filterPosts() {
+            loadPosts(document.getElementById('search-input').value.trim());
+        }
+
+        // 상세 게시글 가져오기 (커뮤니티 인터페이스 및 하트 토글 연동)
+        function loadPosts(keyword = "") {
+            let query = db.collection('posts').where('missionId', '==', activeMissionId);
+            
+            if (currentSort === 'likes') {
+                query = query.orderBy('likes', 'desc');
+            } else {
+                query = query.orderBy('createdAt', 'desc');
+            }
+
+            query.onSnapshot((snapshot) => {
+                const container = document.getElementById('posts-container');
+                container.innerHTML = '';
+
+                let count = 0;
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const id = doc.id;
+
+                    // 키워드 검색 필터링 적용
+                    if (keyword && !data.content.includes(keyword)) return;
+                    count++;
+
+                    const isLiked = data.likedBy && data.likedBy.includes(currentUser.uid);
+                    const heartClass = isLiked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-gray-400';
+                    const bgHeart = isLiked ? 'bg-red-50' : 'bg-white border border-gray-300';
+
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-lg border border-gray-200 shadow-sm space-y-2 relative";
+                    card.innerHTML = `
+                        <div class="text-xs text-gray-400 font-bold">작성자: ${data.authorName}</div>
+                        <div class="text-sm text-black whitespace-pre-line">${data.content}</div>
+                        <div class="flex justify-end pt-2">
+                            <button onclick="toggleLike('${id}', '${data.authorUid}', ${isLiked})" class="flex items-center space-x-1 px-2 py-1 rounded text-xs font-bold ${bgHeart}">
+                                <i class="${heartClass}"></i>
+                                <span>${data.likes || 0}</span>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                if (count === 0) {
+                    container.innerHTML = `<p class="text-center py-8 text-gray-400 text-xs">일치하거나 작성된 글이 없습니다.</p>`;
+                }
+            });
+        }
+
+        // 하트 토글 함수 및 실시간 포인트 지급 (+5P)
+        window.toggleLike = function(postId, authorUid, isLiked) {
+            const postRef = db.collection('posts').doc(postId);
+            
+            if (!isLiked) {
+                // 하트 활성화 및 글쓴이에게 5포인트 지급
+                postRef.update({
+                    likes: firebase.firestore.FieldValue.increment(1),
+                    likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                }).then(() => {
+                    db.collection('users').doc(authorUid).update({
+                        points: firebase.firestore.FieldValue.increment(5)
+                    });
+                });
+            } else {
+                // 하트 취소 (포인트 회수는 정책상 차감하지 않거나 선택 적용 가능, 여기서는 하트수와 배열만 차감)
+                postRef.update({
+                    likes: firebase.firestore.FieldValue.increment(-1),
+                    likedBy: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                });
+            }
+        };
+
+        // 관리자 패널 진입
+        window.openAdminPanel = function() {
+            if (currentUser.email !== ADMIN_EMAIL) return alert('접근 권한이 없습니다.');
+            switchTab('admin');
+            
+            db.collection('missions').where('status', '==', 'pending').onSnapshot(snap => {
+                const container = document.getElementById('admin-pending-list');
+                container.innerHTML = '';
+                if(snap.empty) {
+                    container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">대기 중인 질문이 없습니다.</p>';
+                    return;
+                }
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const id = doc.id;
+                    const item = document.createElement('div');
+                    item.className = "bg-white p-3 rounded-lg border flex flex-col space-y-2";
+                    item.innerHTML = `
+                        <div class="text-sm font-medium">${data.content}</div>
+                        <div class="text-[10px] text-gray-400">제안: ${data.suggestedBy}</div>
+                        <div class="flex space-x-2 justify-end">
+                            <button onclick="approveQuest('${id}')" class="bg-ewha-green text-white text-xs px-3 py-1 rounded font-bold">승인</button>
+                            <button onclick="rejectQuest('${id}')" class="bg-red-600 text-white text-xs px-3 py-1 rounded font-bold">거절</button>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            });
+        };
+
+        window.approveQuest = function(id) {
+            db.collection('missions').doc(id).update({
+                status: 'approved',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => alert('승인되었습니다. 최상단 미션풀에 배치됩니다.'));
+        };
+
+        window.rejectQuest = function(id) {
+            if(confirm('이 질문을 삭제 및 차단하시겠습니까?')) {
+                db.collection('missions').doc(id).delete();
+            }
+        };
     </script>
 </body>
 </html>
