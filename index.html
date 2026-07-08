@@ -182,7 +182,7 @@
             <!-- [6. 공동 개발자 화면] -->
             <div id="view-admin" class="hidden space-y-5">
                 <div class="bg-amber-50 border border-amber-300 p-4 rounded-xl space-y-3 text-xs">
-                    <h4 class="font-bold text-amber-900"><i class="fa-solid fa-calendar-sliders"></i> 이화 학사 일정 통제 데스크</h4>
+                    <h4 class="font-bold text-amber-900"><i class="fa-solid fa-calendar-sliders"></i> 이화 일정 통제 데스크</h4>
                     <div class="space-y-2">
                         <label class="block font-bold">📅 날짜 선택</label>
                         <input type="date" id="admin-date-picker" class="border p-1.5 rounded w-full">
@@ -645,7 +645,7 @@
                 else arr.sort((a,b) => b.timeValue - a.timeValue);
 
                 if(arr.length === 0) {
-                    container.innerHTML = '<p class="text-center py-6 text-xs text-gray-400">등록된 조언이 없습니다.</p>';
+                    container.innerHTML = '<p class="text-center py-6 text-xs text-gray-400">등록된 답변이 없습니다.</p>';
                     return;
                 }
 
