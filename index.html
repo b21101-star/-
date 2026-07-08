@@ -57,7 +57,7 @@
 
             <!-- [1. 커뮤니티 창] -->
             <div id="view-community" class="hidden space-y-4">
-                <h3 class="font-bold text-sm text-gray-700 border-b pb-1">📜 전체 미션 기록</h3>
+                <h3 class="font-bold text-sm text-gray-700 border-b pb-1">📜 전체 미션 히스토리</h3>
                 <div id="mission-history-list" class="space-y-3"></div>
             </div>
 
@@ -90,7 +90,7 @@
                     <div class="text-red-400">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div class="text-blue-400">토</div>
                 </div>
                 <div id="calendar-days" class="grid grid-cols-7 gap-1 min-h-[240px]"></div>
-                <p class="text-[10px] text-gray-400 text-center leading-relaxed">* 미션을 완료하면 날짜 칸에 도장이 찍힙니다. 한 달간 미션 완수 시 보너스 +30P!</p>
+                <p class="text-[10px] text-gray-400 text-center leading-relaxed">* 미션을 완료하면 날짜 칸에 교표 도장이 찍힙니다. 한 달 올미션 완수 시 보너스 +30P!</p>
             </div>
 
             <!-- [3. 오늘의 미션 창] -->
@@ -102,15 +102,13 @@
                     <div id="today-status-text" class="text-xs text-gray-400 font-semibold"></div>
                 </div>
 
-                <!-- ⭐ 턴제 재참여 분기 패널: 한 바퀴 돌아서 이미 완료했던 미션 턴이 다시 돌아왔을 때만 노출 -->
-                <div id="re-participate-box" class="hidden bg-gray-50 border p-4 rounded-xl text-center space-y-3">
-                    <p class="text-xs font-bold text-gray-600">💡 예전에 완료했던 미션의 턴이 다시 돌아왔습니다</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="setWriteMode('retry')" class="bg-gray-800 text-white p-2.5 rounded text-xs font-bold">다시 올리기</button>
-                        <button onclick="setWriteMode('edit')" class="bg-ewha text-white p-2.5 rounded text-xs font-bold">게시물 수정하기</button>
-                    </div>
+                <!-- 💡 턴제 재참여 분기 패널 (작성 당일엔 절대 안 뜨고, 한 바퀴 돌아 똑같은 미션이 오늘 새로 찾아왔을 때만 가동) -->
+                <div id="re-participate-box" class="hidden grid grid-cols-2 gap-2 bg-gray-50 border p-4 rounded-xl text-center">
+                    <button onclick="setWriteMode('retry')" class="bg-gray-800 text-white p-2.5 rounded text-xs font-bold">다시 올리기</button>
+                    <button onclick="setWriteMode('edit')" class="bg-ewha text-white p-2.5 rounded text-xs font-bold">게시물 수정하기</button>
                 </div>
 
+                <!-- 일반 작성 버튼 및 당일 제출 완료 잠금 버튼용 플레이스홀더 -->
                 <button id="btn-today-write" onclick="setWriteMode('normal')" class="w-full bg-ewha text-white py-3.5 rounded-xl font-bold hover:bg-ewha-dark transition shadow text-sm">작성하기 (+15P)</button>
             </div>
 
@@ -120,7 +118,7 @@
                 <h3 class="font-bold text-base text-gray-800">📝 답변 및 인증 파일 올리기</h3>
                 <div id="write-target-title" class="p-3 bg-gray-50 rounded border text-xs font-bold text-ewha"></div>
                 
-                <textarea id="write-text" rows="5" placeholder="답변을 입력하세요..." class="w-full border p-3 rounded-lg text-xs focus:outline-ewha"></textarea>
+                <textarea id="write-text" rows="5" placeholder="생생한 정보를 입력하세요..." class="w-full border p-3 rounded-lg text-xs focus:outline-ewha"></textarea>
                 
                 <div class="space-y-1">
                     <label class="block text-[11px] font-bold text-gray-400">📸 사진 첨부 (선택)</label>
@@ -182,7 +180,7 @@
             <!-- [6. 공동 개발자 화면] -->
             <div id="view-admin" class="hidden space-y-5">
                 <div class="bg-amber-50 border border-amber-300 p-4 rounded-xl space-y-3 text-xs">
-                    <h4 class="font-bold text-amber-900"><i class="fa-solid fa-calendar-sliders"></i> 이화 일정 통제 데스크</h4>
+                    <h4 class="font-bold text-amber-900"><i class="fa-solid fa-calendar-sliders"></i> 이화 학사 일정 통제 데스크</h4>
                     <div class="space-y-2">
                         <label class="block font-bold">📅 날짜 선택</label>
                         <input type="date" id="admin-date-picker" class="border p-1.5 rounded w-full">
@@ -327,7 +325,7 @@
                 initMissionsDatabase().then(() => {
                     syncSystemConfig().then(() => {
                         listenUserProfile();
-                        switchTab('community'); // 최초 앱 실행 시 커뮤니티 창 실행 [source: 2]
+                        switchTab('community'); 
                     });
                 });
             } else {
@@ -359,7 +357,6 @@
             const dateStr = today.toISOString().split('T')[0];
             const currentDayStatus = scheduleMap[dateStr] || "normal";
 
-            // 주말 및 관리자가 설정한 휴일/방학 예외처리 [source: 2]
             if (dayOfWeek === 0 || dayOfWeek === 6 || currentDayStatus === "holiday") {
                 todayMissionInfo = { isAvailable: false, msg: "오늘의 미션이 없습니다.", title: "오늘의 미션이 없습니다." };
                 return;
@@ -443,7 +440,6 @@
                     activeList.push({ id: doc.id, title: d.content, displayTag: `💡 제안 퀘스트 #${d.indexOrder}`, orderKey: d.indexOrder });
                 });
 
-                // 최신 활성 질문이 무조건 맨 위 상자로 오게 빌드 [source: 2]
                 activeList.sort((a, b) => b.orderKey - a.orderKey);
 
                 activeList.forEach((item) => {
@@ -470,7 +466,7 @@
             });
         }
 
-        // 오늘의 미션 검증 UI (과거 완료한 기록이 있을 때만 수정/다시작성 분기 패널 가동) [source: 2]
+        // ⭐ [결정적 보완] 턴제 재참여 검증 UI 완벽 동기화 처리
         function evaluateTodayMissionUI() {
             const btn = document.getElementById('btn-today-write');
             const reBox = document.getElementById('re-participate-box');
@@ -487,16 +483,48 @@
 
             titleText.innerText = todayMissionInfo.title;
             document.getElementById('today-number-tag').innerText = `Mission #${String(todayMissionInfo.serial).padStart(2, '0')}`;
+            
             const isDone = localProfile.completedMissions && localProfile.completedMissions[todayMissionInfo.id];
 
             if (isDone) {
-                // ⭐ 당일 실시간 수정용이 아닌, 한 바퀴 다 돌고 다시 이 미션 턴이 돌아왔을 때 작동하는 분기 노출 [source: 2]
-                btn.classList.add('hidden');
-                reBox.classList.remove('hidden'); 
-                statusText.innerText = "이전에 완료했던 번호의 미션 턴이 다시 돌아왔습니다! 수정 또는 다시 올리기가 가능합니다.";
+                const todayStr = new Date().toISOString().split('T')[0];
+                
+                // 오늘 작성한 글이 실시간 파이어베이스 세션에 박혀있는지 정밀 날짜 추적 연산
+                db.collection('posts')
+                  .where('missionId', '==', todayMissionInfo.id)
+                  .where('authorUid', '==', currentUser.uid)
+                  .get().then(snap => {
+                      let wroteToday = false;
+                      snap.forEach(doc => {
+                          const cAt = doc.data().createdAt;
+                          if (cAt) {
+                              const postDateStr = cAt.toDate().toISOString().split('T')[0];
+                              if (postDateStr === todayStr) wroteToday = true; 
+                          }
+                      });
+
+                      // 💡 핵심 검증벽 작동
+                      if (wroteToday) {
+                          // 상황 1: 오늘 쓰자마자 고치는 행위 전면 강제 차단 및 잠금[cite: 2]
+                          btn.classList.remove('hidden');
+                          reBox.classList.add('hidden');
+                          btn.disabled = true;
+                          btn.className = "w-full bg-gray-300 text-gray-500 py-3.5 rounded-xl font-bold cursor-not-allowed text-sm";
+                          btn.innerText = "제출 완료 (당일 수정 불가)";
+                          statusText.innerText = "✅ 오늘의 미션을 완수했습니다. 작성 당일에는 수정이 불가능하며, 다음번에 로테이션 턴이 돌아왔을 때 비로소 수정할 수 있습니다.";
+                      } else {
+                          // 상황 2: 예전에 올렸던 미션이 오랜 세월을 거쳐 '오늘의 미션'으로 다시 새로 찾아온 날![cite: 2]
+                          btn.classList.add('hidden');
+                          reBox.classList.remove('hidden'); // 드디어 다시 올리기 / 게시물 수정하기 선택 패널 오픈[cite: 2]
+                          statusText.innerText = "이전에 완료했던 번호의 미션 턴이 다시 돌아왔습니다! 수정 또는 다시 올리기가 활성화되었습니다.";
+                      }
+                  });
             } else {
+                // 아직 한 번도 수행한 적 없는 신규 미션 상태
                 btn.classList.remove('hidden');
                 reBox.classList.add('hidden');
+                btn.disabled = false;
+                btn.className = "w-full bg-ewha text-white py-3.5 rounded-xl font-bold hover:bg-ewha-dark transition shadow text-sm";
                 btn.innerText = "작성하기 (+15P)";
                 statusText.innerText = "⏳ 미수행 미션입니다. 글을 쓰고 보상을 받으세요!";
             }
@@ -508,7 +536,7 @@
             document.getElementById('write-target-title').innerText = `🎯 미션: ${todayMissionInfo.title}`;
             
             if (mode === 'edit') {
-                // 한 바퀴 돌고 와서 [게시물 수정하기]를 택했을 때, 예전 글을 파이어베이스에서 꺼내와서 채워줌 [source: 2]
+                // 이전 턴(예전)에 작성했던 글 데이터 호출 바인딩[cite: 2]
                 db.collection('posts')
                   .where('missionId', '==', todayMissionInfo.id)
                   .where('authorUid', '==', currentUser.uid)
@@ -528,17 +556,21 @@
 
             const handleUpload = (photoBase64 = "") => {
                 if (currentWriteMode === 'edit') {
-                    // 턴제 기반 기존글 덮어쓰기 수정 업데이트 연동 [source: 2]
+                    // 이전 턴 글 찾아서 덮어쓰기 업데이트 연동[cite: 2]
                     db.collection('posts').where('missionId', '==', todayMissionInfo.id).where('authorUid', '==', currentUser.uid).limit(1).get().then(snap => {
                         if(!snap.empty) {
-                            snap.docs[0].ref.update({ content: text, photoData: photoBase64 || snap.docs[0].data().photoData }).then(() => {
-                                alert('성공적으로 수정되었습니다!');
+                            snap.docs[0].ref.update({ 
+                                content: text, 
+                                photoData: photoBase64 || snap.docs[0].data().photoData,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp() // 수정 타임스탬프를 오늘 시점으로 갱신
+                            }).then(() => {
+                                alert('이전 턴 게시물이 성공적으로 수정되었습니다!');
                                 switchTab('community');
                             });
                         }
                     });
                 } else {
-                    // 일반 신규 작성 및 다시 올리기(retry) [source: 2]
+                    // 일반 신규 작성 및 이전 턴 초기화 다시 올리기(retry)[cite: 2]
                     db.collection('posts').add({
                         missionId: todayMissionInfo.id,
                         content: text,
@@ -552,7 +584,6 @@
                         const isFirst = !(localProfile.completedMissions && localProfile.completedMissions[todayMissionInfo.id]);
                         const upData = { alerts: firebase.firestore.FieldValue.arrayUnion(`🎯 오늘의 미션을 완수해 +15P를 획득했습니다!`) };
                         
-                        // 아예 처음 작성했을 때만 포인트 추가 지급
                         if (isFirst) upData.points = firebase.firestore.FieldValue.increment(15);
                         upData[`completedMissions.${todayMissionInfo.id}`] = true;
 
@@ -645,7 +676,7 @@
                 else arr.sort((a,b) => b.timeValue - a.timeValue);
 
                 if(arr.length === 0) {
-                    container.innerHTML = '<p class="text-center py-6 text-xs text-gray-400">등록된 답변이 없습니다.</p>';
+                    container.innerHTML = '<p class="text-center py-6 text-xs text-gray-400">등록된 조언이 없습니다.</p>';
                     return;
                 }
 
