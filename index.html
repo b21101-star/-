@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>이화 퀘스트 - EWHA Quest</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Firebase SDK Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
@@ -16,6 +13,8 @@
         .bg-ewha { background-color: #00531F; }
         .bg-ewha-dark { background-color: #003a16; }
         .bg-ewha-light { background-color: #e6f0ea; }
+        /* 요청하신 상단 바 전용 컬러 매핑 */
+        .bg-ewha-topbar { background-color: #DBFFE9; }
         .text-ewha { color: #00531F; }
         .text-ewha-dark { color: #003a16; }
         .border-ewha { border-color: #00531F; }
@@ -27,17 +26,16 @@
 
     <div class="max-w-md mx-auto min-h-screen bg-white shadow-2xl flex flex-col justify-between relative overflow-hidden">
         
-        <!-- 상단 고정 로고 바 (로고 클릭 시 무조건 커뮤니티 창 실행) -->
-        <header id="app-header" class="hidden bg-white border-b border-gray-200 h-16 flex items-center justify-center sticky top-0 z-50 cursor-pointer" onclick="switchTab('community')">
-            <img src="logo.png" alt="EWHA Quest" class="h-12 object-contain">
+        <header id="app-header" class="hidden bg-ewha-topbar border-b border-emerald-100 h-20 flex items-center justify-center sticky top-0 z-50 cursor-pointer shadow-sm" onclick="switchTab('community')">
+            <img src="logo.png" alt="EWHA Quest" class="h-16 w-auto object-contain">
         </header>
 
-        <!-- 메인 콘텐츠 스크롤 영역 -->
         <main class="flex-grow p-4 overflow-y-auto no-scrollbar pb-24">
             
-            <!-- [화면 0] 로그인 화면 -->
             <div id="view-login" class="flex flex-col items-center justify-center pt-16 space-y-8">
-                <img src="logo.png" alt="EWHA Quest" class="w-4/5 object-contain">
+                <div class="bg-ewha-topbar p-6 rounded-2xl w-full flex justify-center shadow-sm">
+                    <img src="logo.png" alt="EWHA Quest" class="w-11/12 object-contain">
+                </div>
                 <p class="text-gray-500 text-xs text-center leading-relaxed">이화여자고등학교 구글 계정(@ewha.hs.kr)으로<br>로그인 후 서비스를 이용할 수 있습니다.</p>
                 <button id="btn-login" class="bg-ewha text-white font-bold py-3 px-8 rounded-lg shadow hover:bg-ewha-dark transition w-full max-w-xs flex items-center justify-center space-x-2">
                     <i class="fa-brands fa-google"></i>
@@ -45,20 +43,17 @@
                 </button>
             </div>
 
-            <!-- [공통 상단 잔고 요약 바] -->
             <div id="user-status-bar" class="hidden grid grid-cols-3 text-center bg-ewha-light p-2.5 rounded-lg border border-emerald-200 mb-4 text-xs font-bold text-ewha-dark">
                 <div>👤 <span id="bar-nickname">이화인</span></div>
                 <div>✨ <span id="bar-points">0</span> P</div>
                 <div>❤️ <span id="bar-hearts">0</span> 개</div>
             </div>
 
-            <!-- [1. 커뮤니티 창] -->
             <div id="view-community" class="hidden space-y-4">
                 <h3 class="font-bold text-sm text-gray-700 border-b pb-1">📜 전체 미션 히스토리</h3>
                 <div id="mission-history-list" class="space-y-3"></div>
             </div>
 
-            <!-- [커뮤니티 세부글 리스트 창] -->
             <div id="view-mission-detail" class="hidden space-y-4">
                 <button onclick="switchTab('community')" class="text-xs font-bold text-ewha"><i class="fa-solid fa-arrow-left"></i> 전체목록</button>
                 <div id="detail-mission-card" class="bg-ewha-light border border-ewha p-4 rounded-lg font-bold text-sm text-ewha-dark shadow-sm"></div>
@@ -76,7 +71,6 @@
                 <div id="posts-container" class="space-y-3"></div>
             </div>
 
-            <!-- [2. 캘린더 창] -->
             <div id="view-calendar" class="hidden space-y-4">
                 <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-200">
                     <button onclick="moveMonth(-1)" class="font-bold text-ewha px-3 text-base">&lt;</button>
@@ -90,7 +84,6 @@
                 <p class="text-[10px] text-gray-400 text-center leading-relaxed">* 미션을 완료하면 날짜 칸에 교표 도장이 찍힙니다. 한 달 올미션 완수 시 보너스 +30P!</p>
             </div>
 
-            <!-- [3. 오늘의 미션 창] -->
             <div id="view-today" class="hidden space-y-5 pt-2">
                 <div class="bg-white border-2 border-ewha p-6 rounded-xl text-center space-y-4 shadow-sm">
                     <div class="text-[10px] font-bold text-white bg-ewha inline-block px-3 py-1 rounded-full tracking-wider">TODAY'S MISSION</div>
@@ -100,7 +93,6 @@
                 <button id="btn-today-write" onclick="openDirectWrite('default_today_01', '가장 좋아하는 급식 소개')" class="w-full bg-ewha text-white py-3.5 rounded-xl font-bold hover:bg-ewha-dark transition shadow">작성하기</button>
             </div>
 
-            <!-- [미션 답변 작성 창] -->
             <div id="view-mission-write" class="hidden space-y-4">
                 <button onclick="switchTab('today')" class="text-xs font-bold text-ewha"><i class="fa-solid fa-arrow-left"></i> 뒤로</button>
                 <h3 class="font-bold text-base text-gray-800">📝 답변 및 인증 파일 올리기</h3>
@@ -116,9 +108,7 @@
                 <button onclick="submitMissionPost()" class="w-full bg-ewha text-white py-3 rounded-lg font-bold hover:bg-ewha-dark shadow text-sm">제출하기 (완료 시 +15P)</button>
             </div>
 
-            <!-- [4. 포인트 사용 창] -->
             <div id="view-points" class="hidden space-y-5">
-                <!-- 미션 제안하기 섹션 -->
                 <div class="bg-white border border-gray-200 p-4 rounded-xl space-y-3 shadow-sm">
                     <h4 class="font-bold text-sm text-ewha-dark"><i class="fa-solid fa-lightbulb"></i> 오늘의 미션 제안하기</h4>
                     <p class="text-[11px] text-gray-400">* 제안 시 50P가 우선 차감되며, 승인 거절 시 포인트는 즉시 돌려받습니다.</p>
@@ -126,7 +116,6 @@
                     <button onclick="requestSuggestMission()" class="w-full bg-ewha text-white py-2 rounded text-xs font-bold hover:bg-ewha-dark">50포인트 사용해서 제안하기</button>
                 </div>
 
-                <!-- 하트 구매 상점 섹션 -->
                 <div class="bg-white border border-gray-200 p-4 rounded-xl space-y-3 shadow-sm">
                     <h4 class="font-bold text-sm text-ewha-dark"><i class="fa-solid fa-heart text-red-500"></i> 하트 충전소</h4>
                     <div class="space-y-2">
@@ -146,9 +135,7 @@
                 </div>
             </div>
 
-            <!-- [5. 마이페이지 창] -->
             <div id="view-mypage" class="hidden space-y-5">
-                <!-- 프로필 카드 구성 -->
                 <div class="bg-white border p-4 rounded-xl flex items-center space-x-4 shadow-sm relative">
                     <div class="relative w-16 h-16 group">
                         <img id="mypage-avatar" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ccc'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5-4-8-4z'/></svg>" class="w-full h-full rounded-full border object-cover">
@@ -165,7 +152,6 @@
                     </div>
                 </div>
 
-                <!-- 히스토리 알림 창 -->
                 <div class="bg-white border p-4 rounded-xl space-y-2 shadow-sm">
                     <h4 class="font-bold text-xs text-gray-700 border-b pb-1">🔔 실시간 활동 알림판</h4>
                     <div id="mypage-alerts" class="space-y-1.5 max-h-48 overflow-y-auto text-[11px] no-scrollbar">
@@ -174,7 +160,6 @@
                 </div>
             </div>
 
-            <!-- [6. 최고 관리자 전용 미션 검증실] -->
             <div id="view-admin" class="hidden space-y-4">
                 <h3 class="font-bold text-sm text-red-800 border-b pb-1"><i class="fa-solid fa-shield-halved"></i> 최고 관리자 미션 심사실 (b21101)</h3>
                 <div id="admin-queue" class="space-y-3"></div>
@@ -182,7 +167,6 @@
 
         </main>
 
-        <!-- 하단 바 메뉴 구성 (인스타 스타일 플랫 디자인 - 튀어 나옴 및 크기 차별화 전면 배제) -->
         <nav id="app-nav" class="hidden bg-ewha text-white h-16 flex items-center justify-between px-1 fixed bottom-0 max-w-md w-full z-50 border-t border-ewha-dark text-[10px]">
             <button onclick="switchTab('community')" id="tab-community" class="flex-1 flex flex-col items-center justify-center space-y-1 transition opacity-70">
                 <i class="fa-solid fa-users text-base"></i><span>커뮤니티</span>
@@ -199,7 +183,6 @@
             <button onclick="switchTab('mypage')" id="tab-mypage" class="flex-1 flex flex-col items-center justify-center space-y-1 transition opacity-70">
                 <i class="fa-solid fa-user text-base"></i><span>마이페이지</span>
             </button>
-            <!-- 최고 관리자 단추 (b21101 계정 전용 자동 생성 노출) -->
             <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 flex flex-col items-center justify-center space-y-1 transition text-amber-300 font-bold">
                 <i class="fa-solid fa-unlock-keyhole text-base"></i><span>관리자</span>
             </button>
@@ -207,7 +190,6 @@
 
     </div>
 
-    <!-- 스크립트 비즈니스 엔진 -->
     <script>
         // ⚠️ Firebase 주입 설정 데이터 구조
         const firebaseConfig = {
@@ -324,7 +306,6 @@
                 container.innerHTML = `<p class="text-gray-400 text-center py-4">활동 내역이 없습니다.</p>`;
                 return;
             }
-            // 최신 알림이 위로 오도록 배열 반전 배치
             [...localProfile.alerts].reverse().forEach(text => {
                 const item = document.createElement('div');
                 item.className = "bg-gray-50 border-l-2 border-ewha p-1.5 rounded text-gray-700 leading-tight";
@@ -393,19 +374,33 @@
 
         function loadPosts(keyword = "") {
             let query = db.collection('posts').where('missionId', '==', activeMissionId);
-            if (currentSort === 'likes') query = query.orderBy('likes', 'desc');
-            else query = query.orderBy('createdAt', 'desc');
-
+            
             query.onSnapshot(snap => {
                 const container = document.getElementById('posts-container');
                 container.innerHTML = '';
-                let count = 0;
-
+                
+                let postsArray = [];
                 snap.forEach(doc => {
                     const data = doc.data();
+                    data.id = doc.id;
+                    data.timeValue = data.createdAt ? (data.createdAt.seconds || Date.now()) : Date.now();
+                    
                     if(keyword && !data.content.includes(keyword)) return;
-                    count++;
+                    postsArray.push(data);
+                });
 
+                if (currentSort === 'likes') {
+                    postsArray.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+                } else {
+                    postsArray.sort((a, b) => b.timeValue - a.timeValue);
+                }
+
+                if (postsArray.length === 0) {
+                    container.innerHTML = `<p class="text-center py-8 text-xs text-gray-400">등록된 이화인의 답변 글이 아직 없습니다.</p>`;
+                    return;
+                }
+
+                postsArray.forEach(data => {
                     const isLiked = data.likedBy && data.likedBy.includes(currentUser.uid);
                     const heartIcon = isLiked ? 'fa-solid fa-heart text-red-500' : 'fa-regular fa-heart text-gray-300';
 
@@ -416,7 +411,7 @@
                         <div class="text-xs text-gray-800 whitespace-pre-line leading-relaxed">${data.content}</div>
                         ${data.photoData ? `<img src="${data.photoData}" class="w-full max-h-40 object-cover rounded border mt-2">` : ''}
                         <div class="flex justify-end pt-1">
-                            <button onclick="toggleLikePost('${doc.id}', '${data.authorUid}', ${isLiked})" class="flex items-center space-x-1 border border-gray-200 px-2.5 py-1 rounded-full text-xs font-bold bg-white shadow-sm">
+                            <button onclick="toggleLikePost('${data.id}', '${data.authorUid}', ${isLiked})" class="flex items-center space-x-1 border border-gray-200 px-2.5 py-1 rounded-full text-xs font-bold bg-white shadow-sm">
                                 <i class="${heartIcon}"></i>
                                 <span>${data.likes || 0}</span>
                             </button>
@@ -424,15 +419,14 @@
                     `;
                     container.appendChild(card);
                 });
-                if (count === 0) container.innerHTML = `<p class="text-center py-8 text-xs text-gray-400">등록된 이화인의 답변 글이 아직 없습니다.</p>`;
+            }, error => {
+                console.error("Firestore loading error: ", error);
             });
         }
 
-        // 하트 전송 액션 및 차단 로직 탑재
         window.toggleLikePost = function(postId, authorUid, isLiked) {
             if(isLiked) return alert('이미 하트를 보낸 게시글입니다.');
             
-            // 내 보유 하트 검증
             if(!localProfile.hearts || localProfile.hearts <= 0) {
                 if(confirm('보유하신 하트 개수가 부족합니다. 하트 충전 상점으로 이동하시겠습니까?')) {
                     switchTab('points');
@@ -441,16 +435,13 @@
             }
 
             const postRef = db.collection('posts').doc(postId);
-            // 1. 내 하트 차감
             db.collection('users').doc(currentUser.uid).update({
                 hearts: firebase.firestore.FieldValue.increment(-1)
             }).then(() => {
-                // 2. 글 수신 데이터 업데이트
                 postRef.update({
                     likes: firebase.firestore.FieldValue.increment(1),
                     likedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
                 });
-                // 3. 상대방에게 +5포인트 가산 및 알림 기록
                 db.collection('users').doc(authorUid).update({
                     points: firebase.firestore.FieldValue.increment(5),
                     alerts: firebase.firestore.FieldValue.arrayUnion(`❤️ 작성한 답변 글에 하트 추천을 받아 +5포인트가 적립되었습니다!`)
@@ -484,7 +475,6 @@
                 
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 
-                // 가상 급식 미션 해당 날짜 매핑 구조화
                 let isTodayMissionDay = (dateStr === "2026-07-08");
                 let isDone = localProfile.completedMissions && localProfile.completedMissions[DEFAULT_TODAY_ID];
 
@@ -515,7 +505,6 @@
             }
         }
 
-        // 미션 글 및 사진 업로드 병합 제출
         function submitMissionPost() {
             const text = document.getElementById('write-text').value.trim();
             const fileInput = document.getElementById('write-file');
@@ -525,7 +514,7 @@
                 db.collection('posts').add({
                     missionId: activeMissionId,
                     content: text,
-                    photoData: photoBase64, // Firestore 문서에 직접 바이너리 데이터로 보관처리
+                    photoData: photoBase64,
                     authorUid: currentUser.uid,
                     authorName: localProfile.nickname || "익명의 이화인",
                     likes: 0,
@@ -545,7 +534,6 @@
                 });
             };
 
-            // 이미지 첨부 여부에 따른 스트림 분류기 
             if(fileInput.files.length > 0) {
                 const reader = new FileReader();
                 reader.onload = function(e) { proceedPost(e.target.result); };
@@ -559,7 +547,6 @@
         function requestSuggestMission() {
             const text = document.getElementById('suggest-text').value.trim();
             if(!text) return alert('제안할 미션 질문을 입력하세요.');
-            
             if(localProfile.points < 50) return alert('보유 포인트가 부족합니다. (최소 50P 필요)');
 
             if(confirm('50포인트를 사용하여 이 질문을 오늘의 미션 후보로 제안하시겠습니까?')) {
@@ -583,7 +570,6 @@
 
         function buyHearts(cost, amount) {
             if(localProfile.points < cost) return alert('보유 포인트가 부족하여 구매할 수 없습니다.');
-            
             db.collection('users').doc(currentUser.uid).update({
                 points: firebase.firestore.FieldValue.increment(-cost),
                 hearts: firebase.firestore.FieldValue.increment(amount),
@@ -598,7 +584,7 @@
 
             db.collection('users').where('nickname', '==', val).get().then(snap => {
                 if(!snap.empty && snap.docs[0].id !== currentUser.uid) {
-                    return alert('이미 교내 다른 학생이 사용 중인 중복 닉네임입니다.');
+                    return alert('이미 다른 학생이 사용 중인 중복 닉네임입니다.');
                 }
                 db.collection('users').doc(currentUser.uid).update({ nickname: val })
                   .then(() => alert('닉네임 설정이 안전하게 저장되었습니다.'));
